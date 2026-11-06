@@ -15,7 +15,7 @@ window.PP_CONFIG = {
 
   // Link shown in Settings. Both stores require a privacy policy for apps with ads.
   // Upload privacy/index.html from the project folder so it's served at this address.
-  privacyPolicyUrl: 'https://alphoriasystems.com/pocket-postman/privacy/',
+  privacyPolicyUrl: 'https://usamakhan-12.github.io/pocket-postman/privacy/',
 
   ads: {
     // Keep true while developing. Set false only when the real ad unit IDs below are filled in.
