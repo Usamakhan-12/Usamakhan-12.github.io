@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#6EC3F0">
+<meta name="format-detection" content="telephone=no">
+<title>Pocket Postman</title>
+<style>
+@font-face{font-family:"Lilita One";src:url(fonts/lilita-one-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Nunito";src:url(fonts/nunito-latin-600-normal.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"Nunito";src:url(fonts/nunito-latin-700-normal.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Nunito";src:url(fonts/nunito-latin-800-normal.woff2) format("woff2");font-weight:800;font-display:swap}
+@font-face{font-family:"Nunito";src:url(fonts/nunito-latin-900-normal.woff2) format("woff2");font-weight:900;font-display:swap}
+/* Layout: one phone-width game column — HUD, wooden diorama board, tip bubble, chunky action buttons, floating tab dock.
+   Single bright daytime world on purpose (a game skin), so every color is set explicitly. */
+:root{
+  color-scheme:light;
+  --sky1:#6EC3F0; --sky2:#BFEAFF; --meadow:#D6F0B8;
+  --ink:#1F2B45; --muted:#5B6884; --card:#FFFFFF; --card2:#EFF5FB; --line:#D9E3EE;
+  --red:#E5483B; --redd:#B12F25; --yellow:#FFC93C; --yellowd:#D69A0C; --blue:#3C8CE7; --blued:#2864AE;
+  --green:#3FB861; --greend:#278643; --wood:#9A6638; --woodd:#6A4222; --gold:#F6B92B;
+  --display:"Lilita One","Arial Rounded MT Bold","Trebuchet MS",sans-serif;
+  --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;font-weight:700;
+  background:
+   radial-gradient(60px 26px at 12% 7%,rgba(255,255,255,.9),transparent 70%),
+   radial-gradient(90px 30px at 18% 9%,rgba(255,255,255,.75),transparent 70%),
+   radial-gradient(80px 28px at 84% 16%,rgba(255,255,255,.85),transparent 70%),
+   radial-gradient(110px 34px at 76% 18%,rgba(255,255,255,.6),transparent 70%),
+   linear-gradient(180deg,var(--sky1) 0,var(--sky2) 420px,var(--meadow) 900px,var(--meadow) 100%);
+  background-attachment:fixed;background-color:var(--sky2)}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit}
+.app{max-width:480px;margin:0 auto;padding-inline:16px;padding-block:12px 108px;display:flex;flex-direction:column;gap:12px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;line-height:1.1;text-wrap:balance;letter-spacing:.01em}
+.muted{color:var(--muted)}
+
+/* HUD */
+.hud{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px}
+.hudl{display:flex;gap:8px}
+.round{appearance:none;width:44px;height:44px;border-radius:50%;border:0;background:var(--card);box-shadow:0 4px 0 #B9C9DA,0 6px 12px rgba(20,40,80,.18);display:grid;place-items:center;cursor:pointer}
+.round:active{transform:translateY(3px);box-shadow:0 1px 0 #B9C9DA}
+.round svg{width:24px;height:24px}
+.ribbon{justify-self:center;text-align:center;min-width:0}
+.ribbon small{display:block;font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.ribbon h1{font-size:clamp(22px,7vw,32px);color:#fff;-webkit-text-stroke:7px var(--blued);paint-order:stroke fill;text-shadow:0 4px 0 var(--blued),0 8px 12px rgba(0,0,0,.2);white-space:nowrap}
+.coins{display:inline-flex;align-items:center;gap:6px;background:var(--card);border-radius:999px;padding:5px 12px 5px 5px;box-shadow:0 4px 0 #B9C9DA,0 6px 12px rgba(20,40,80,.18);font-family:var(--display);font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.coins svg{width:28px;height:28px}
+.coins.bump{animation:bump .5s}
+@keyframes bump{40%{transform:scale(1.18)}}
+
+.statbar{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px}
+.stat{background:var(--card);border-radius:14px;padding:6px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 3px 0 #C6D4E3;min-width:0}
+.stat svg{width:24px;height:24px;flex:none}
+.stat div{min-width:0}
+.stat b{display:block;font-family:var(--display);font-weight:400;font-size:19px;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat span{font-size:10.5px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.stat.warn b{color:var(--red)}
+.hdots{display:flex;gap:3px;flex-wrap:wrap}
+.hdots i{width:16px;height:16px;border-radius:5px;background:#DDE6EF;display:grid;place-items:center}
+.hdots i.on{background:var(--yellow)}
+.hdots i svg{width:12px;height:12px}
+
+/* Board */
+.stage{background:linear-gradient(180deg,#B27A45,var(--wood));border-radius:24px;padding:10px;box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 9px 0 var(--woodd),0 18px 28px rgba(40,30,10,.3);position:relative}
+.stage::before{content:"";position:absolute;inset:4px;border-radius:20px;border:2px dashed rgba(255,235,200,.35);pointer-events:none}
+.board{position:relative;display:grid;grid-template-columns:repeat(var(--n),1fr);width:100%;aspect-ratio:1;border-radius:14px;overflow:hidden;background:#8CC85A;box-shadow:inset 0 0 0 2px rgba(0,0,0,.15)}
+.tile{appearance:none;border:0;margin:0;padding:0;background:none;position:relative;display:block;width:100%;height:100%;min-width:0}
+button.tile{cursor:pointer}
+button.tile:hover .rot{filter:brightness(1.07)}
+.tile:focus-visible{outline:3px solid #fff;outline-offset:-4px;z-index:6}
+.layer{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+.rot{transition:transform .2s cubic-bezier(.3,1.5,.6,1)}
+.lit .rot{filter:drop-shadow(0 0 3px rgba(255,215,60,.95))}
+.d{fill:none;stroke:#fff;stroke-width:3;stroke-dasharray:8 7;opacity:.85}
+.lit .d{stroke:#FFD43B;stroke-dasharray:none;stroke-width:5;opacity:1}
+.ripple{animation:drift 2.6s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translateX(7px)}}
+.ico{position:absolute;left:8%;top:2%;width:84%;height:84%;pointer-events:none;z-index:4;overflow:visible;filter:drop-shadow(0 3px 2px rgba(0,0,0,.28))}
+.env{transform-origin:48px 12px;transform:scale(0);transition:transform .3s cubic-bezier(.3,1.8,.5,1)}
+.tile.got .env{transform:scale(1)}
+.tile.warn::after,.tile.hinted::after{content:"";position:absolute;inset:5%;border-radius:12px;z-index:7;pointer-events:none;animation:blink .8s ease-in-out 3}
+.tile.warn::after{border:4px solid var(--red);background:rgba(229,72,59,.18)}
+.tile.hinted::after{border:4px solid #FFE066;background:rgba(255,224,102,.25)}
+@keyframes blink{50%{opacity:.2}}
+.postman{position:absolute;z-index:8;pointer-events:none;transition:left .21s linear,top .21s linear;display:grid;place-items:center}
+.postman span{display:block;width:92%;height:92%}
+.postman svg{width:100%;height:100%;display:block;filter:drop-shadow(0 3px 2px rgba(0,0,0,.35))}
+.postman.walk svg{animation:bob .2s ease-in-out infinite alternate}
+@keyframes bob{to{transform:translateY(-6%)}}
+
+/* tip bubble */
+.tip{display:flex;gap:10px;align-items:flex-start}
+.tip .av{width:44px;height:44px;flex:none;border-radius:50%;background:var(--card);box-shadow:0 3px 0 #C6D4E3;display:grid;place-items:center;overflow:hidden}
+.tip .av svg{width:40px;height:40px}
+.bubble{position:relative;background:var(--card);border-radius:16px;padding:10px 14px;box-shadow:0 3px 0 #C6D4E3;min-height:44px;flex:1;min-width:0}
+.bubble::before{content:"";position:absolute;left:-7px;top:15px;border:8px solid transparent;border-right-color:var(--card);border-left:0}
+.bubble.bad{background:#FFE9E6;color:#8E2219}.bubble.bad::before{border-right-color:#FFE9E6}
+.bubble.good{background:#E3F7E8;color:#1D6B37}.bubble.good::before{border-right-color:#E3F7E8}
+
+/* chunky buttons */
+.actions{display:grid;grid-template-columns:1fr 1.7fr 1fr;gap:10px;padding-bottom:6px}
+.gb{--c:var(--blue);--cd:var(--blued);appearance:none;border:0;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 55%),var(--c);color:#fff;
+  box-shadow:0 6px 0 var(--cd),0 10px 16px rgba(20,30,60,.22);padding:10px 8px;min-height:62px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-family:var(--display);font-size:18px;letter-spacing:.02em;text-shadow:0 2px 0 rgba(0,0,0,.2);transition:transform .06s,box-shadow .06s}
+.gb:active{transform:translateY(5px);box-shadow:0 1px 0 var(--cd),0 3px 6px rgba(20,30,60,.2)}
+.gb small{font-family:var(--body);font-size:11.5px;font-weight:900;opacity:.92;text-shadow:none}
+.gb svg{width:22px;height:22px}
+.gb.red{--c:var(--red);--cd:var(--redd);font-size:26px}
+.gb.yellow{--c:var(--yellow);--cd:var(--yellowd);color:#5A3B00;text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.gb.green{--c:var(--green);--cd:var(--greend)}
+.gb.white{--c:#FFFFFF;--cd:#B9C9DA;color:var(--ink);text-shadow:none}
+.gb[disabled]{filter:grayscale(.8);opacity:.6;cursor:not-allowed}
+.gb:focus-visible,.round:focus-visible,.node:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.gb.wide{width:100%}
+
+/* dock */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:20;padding-inline:12px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));pointer-events:none}
+.dock nav{pointer-events:auto;max-width:456px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-radius:22px;box-shadow:0 5px 0 #B9C9DA,0 10px 24px rgba(20,40,80,.22);padding:6px}
+.dock button{appearance:none;border:0;background:none;border-radius:16px;padding:6px 2px;font-size:11.5px;font-weight:900;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.dock button svg{width:26px;height:26px}
+.dock button[aria-current="page"]{background:var(--card2);color:var(--ink)}
+.dock button:focus-visible{outline:3px solid var(--blue);outline-offset:-2px}
+
+/* panels */
+.panel{background:var(--card);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 5px 0 #C6D4E3,0 10px 20px rgba(20,40,80,.1)}
+.panel h2{font-size:22px}
+.pagehead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pagehead h1{font-size:36px;color:#fff;-webkit-text-stroke:7px var(--blued);paint-order:stroke fill;text-shadow:0 4px 0 var(--blued),0 8px 12px rgba(0,0,0,.2)}
+
+/* map */
+.daily{display:flex;flex-direction:row;align-items:center;gap:14px}
+.cal{width:56px;height:60px;flex:none;border-radius:12px;background:#fff;box-shadow:0 3px 0 #C6D4E3,inset 0 0 0 2px var(--line);overflow:hidden;text-align:center}
+.cal i{display:block;background:var(--red);color:#fff;font-style:normal;font-size:11px;font-weight:900;letter-spacing:.08em;padding:3px 0}
+.cal b{display:block;font-family:var(--display);font-weight:400;font-size:26px;line-height:1.35}
+.daily .tx{flex:1;min-width:0}
+.hood{border-radius:22px;overflow:hidden;background:var(--card);box-shadow:0 5px 0 #C6D4E3,0 10px 20px rgba(20,40,80,.1)}
+.hood .banner{position:relative;height:96px}
+.hood .banner svg{width:100%;height:100%;display:block}
+.hood .banner .lab{position:absolute;left:12px;bottom:10px;right:12px;display:flex;justify-content:space-between;align-items:flex-end;gap:8px}
+.hood .banner h2{color:#fff;font-size:26px;-webkit-text-stroke:6px #1F2B45;paint-order:stroke fill;text-shadow:0 3px 0 #1F2B45}
+.pill{background:rgba(255,255,255,.95);border-radius:999px;padding:3px 10px;font-size:12.5px;font-weight:900;white-space:nowrap}
+.trail{position:relative;height:440px;background:linear-gradient(180deg,#E9F6DB,#D9EFC3)}
+.trail svg.road{position:absolute;inset:0;width:100%;height:100%}
+.node{appearance:none;position:absolute;transform:translate(-50%,-50%);width:62px;height:62px;border-radius:50%;border:4px solid #fff;cursor:pointer;
+  font-family:var(--display);font-size:24px;color:#fff;background:var(--blue);box-shadow:0 5px 0 var(--blued),0 8px 14px rgba(0,0,0,.2);display:grid;place-items:center;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.node.done{background:var(--green);box-shadow:0 5px 0 var(--greend),0 8px 14px rgba(0,0,0,.2)}
+.node.next{background:var(--red);box-shadow:0 5px 0 var(--redd),0 0 0 8px rgba(229,72,59,.25),0 8px 14px rgba(0,0,0,.2);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 5px 0 var(--redd),0 0 0 14px rgba(229,72,59,.08),0 8px 14px rgba(0,0,0,.2)}}
+.node[disabled]{background:#B8C4D2;box-shadow:0 5px 0 #8C99AA;cursor:not-allowed}
+.node[disabled] svg{width:24px;height:24px}
+.nstars{position:absolute;transform:translate(-50%,0);font-size:15px;letter-spacing:1px;white-space:nowrap;pointer-events:none;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+.nstars .on{color:var(--gold)}.nstars .off{color:#B9C4D0}
+
+/* postcards */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{background:#FFFDF8;padding:8px 8px 10px;border-radius:6px;box-shadow:0 4px 0 #D9D2C2,0 10px 18px rgba(30,30,60,.15);display:flex;flex-direction:column;gap:8px;min-width:0;position:relative;transform:rotate(-1.2deg)}
+.card:nth-child(even){transform:rotate(1.4deg)}
+.card .pic{position:relative}
+.card .pic svg{width:100%;height:auto;display:block;border-radius:3px}
+.card .stampc{position:absolute;right:6px;top:6px;width:30px;height:36px;background:var(--red);border:3px dotted #FFFDF8;outline:2px solid #FFFDF8;display:grid;place-items:center;color:#fff;font-family:var(--display);font-size:12px}
+.card.locked .pic svg{filter:grayscale(1) brightness(1.1) opacity(.45)}
+.card.locked .stampc{background:#AEB8C4}
+.card .lock{position:absolute;inset:0;display:grid;place-items:center}
+.card .lock svg{width:34px;height:34px}
+.card h3{font-size:17px}
+.card p{margin:0;font-size:12.5px;color:var(--muted);font-weight:700}
+
+/* playtest */
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi{background:var(--card);border-radius:16px;padding:10px 12px;box-shadow:0 4px 0 #C6D4E3}
+.kpi b{display:block;font-family:var(--display);font-size:26px;font-weight:400}
+.kpi span{font-size:11.5px;color:var(--muted);font-weight:800}
+textarea{width:100%;min-height:140px;font:12px ui-monospace,monospace;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px}
+.row{display:flex;gap:10px}.row>*{flex:1}
+
+/* sheets */
+.scrim{position:fixed;inset:0;background:rgba(14,24,48,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding-inline:16px;padding-block:16px;overflow:hidden}
+.sheet{position:relative;background:var(--card);color:var(--ink);border-radius:26px;padding:22px 20px 20px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:12px;align-items:stretch;text-align:center;
+  box-shadow:0 8px 0 #B9C9DA,0 20px 40px rgba(0,0,0,.3);animation:pop .32s cubic-bezier(.3,1.5,.5,1)}
+.sheet h2{font-size:34px}
+.sheet p{margin:0}
+.sheet .hero{width:110px;height:90px;margin:-6px auto 0}
+@keyframes pop{from{transform:scale(.8);opacity:0}}
+.stars{display:flex;justify-content:center;gap:6px;margin-top:-4px}
+.stars svg{width:54px;height:54px;transform:scale(0);animation:star .45s cubic-bezier(.3,1.8,.5,1) forwards}
+.stars svg:nth-child(2){width:66px;height:66px;margin-top:-10px;animation-delay:.18s}
+.stars svg:nth-child(3){animation-delay:.36s}
+@keyframes star{to{transform:scale(1)}}
+.earn{display:flex;flex-direction:column;gap:6px;background:var(--card2);border-radius:14px;padding:10px 14px;text-align:left}
+.earn div{display:flex;justify-content:space-between;font-weight:800;font-variant-numeric:tabular-nums}
+.earn .tot{border-top:2px dashed var(--line);padding-top:6px}
+.earn .plus{color:var(--greend)}
+.adbox{border:3px dashed #B9C9DA;border-radius:16px;padding:20px 14px;display:flex;flex-direction:column;gap:8px;align-items:center;background:var(--card2)}
+.bar{height:12px;width:100%;background:#DDE6EF;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--yellow),var(--red));transition:width 1s linear;border-radius:99px}
+.eyebrow{font-size:11.5px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.cf{position:absolute;top:-20px;width:10px;height:14px;border-radius:2px;animation:fall linear forwards;z-index:60;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+
+/* splash */
+.splash{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding-inline:24px;padding-block:24px;text-align:center;
+  background:radial-gradient(120px 40px at 20% 14%,rgba(255,255,255,.9),transparent 70%),radial-gradient(140px 44px at 80% 22%,rgba(255,255,255,.8),transparent 70%),linear-gradient(180deg,#5DB8EC,#BDE9FF 55%,#9BD46B 55%,#7FC152)}
+.logo{font-family:var(--display);color:#fff;line-height:.95;font-size:clamp(46px,14vw,68px);text-shadow:0 5px 0 var(--redd),3px 0 0 var(--redd),-3px 0 0 var(--redd),0 -3px 0 var(--redd),3px 3px 0 var(--redd),-3px 3px 0 var(--redd),0 12px 18px rgba(0,0,0,.25);transform:rotate(-3deg)}
+.logo span{display:block;color:var(--yellow)}
+.splash .scene{width:min(320px,86vw);height:auto}
+.splash .gb{min-width:220px}
+@media (prefers-reduced-motion: reduce){.rot,.postman,.env,.bar i{transition:none}.ripple,.postman.walk svg,.node.next,.sheet,.stars svg,.coins.bump{animation:none}.stars svg{transform:none}.tile.warn::after,.tile.hinted::after{animation:none}}
+body{margin:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
+textarea{-webkit-user-select:text;user-select:text}
+.app{padding-top:calc(12px + env(safe-area-inset-top,0px))}
+.splash{padding-top:calc(24px + env(safe-area-inset-top,0px));padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.dock nav{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:4px}
+.setrow span{min-width:0}
+.switch{appearance:none;width:58px;height:34px;border-radius:99px;border:0;background:#C9D4E0;position:relative;cursor:pointer;flex:none}
+.switch::after{content:"";position:absolute;left:4px;top:4px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:left .15s}
+.switch[aria-checked="true"]{background:var(--green)}.switch[aria-checked="true"]::after{left:28px}
+.linkbtn{color:var(--blued);font-weight:900;text-decoration:none}
+
+/* polish: softer depth, clearer active states, calmer overlays */
+.panel,.hood{box-shadow:0 4px 0 #CFDBE8,0 12px 28px rgba(20,40,80,.10)}
+.stat{box-shadow:0 3px 0 #CFDBE8,0 6px 14px rgba(20,40,80,.06)}
+.scrim{background:rgba(14,24,48,.5);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.sheet{box-shadow:0 8px 0 #C6D4E3,0 24px 48px rgba(10,20,50,.32)}
+.dock nav{box-shadow:0 4px 0 #C6D4E3,0 12px 28px rgba(20,40,80,.2)}
+.dock button{transition:background .15s,color .15s}
+.dock button[aria-current="page"]{background:#E6F1FD;color:var(--blued)}
+.dock button[aria-current="page"] svg{transform:translateY(-1px) scale(1.08)}
+.dock button svg{transition:transform .2s cubic-bezier(.3,1.6,.5,1)}
+.bubble{font-size:14.5px;line-height:1.4}
+.sect{font-size:11.5px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:2px 4px -4px}
+.setrow+.setrow{border-top:1px solid var(--line);padding-top:12px}
+.seti{display:flex;align-items:center;gap:12px;min-width:0}
+.seti>i{width:38px;height:38px;flex:none;border-radius:12px;display:grid;place-items:center;font-style:normal;font-size:19px;background:var(--card2)}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.92);border-radius:999px;padding:6px 14px 6px 8px;font-weight:900;font-size:14px;box-shadow:0 3px 0 rgba(30,60,20,.18);font-variant-numeric:tabular-nums}
+.chip svg{width:20px;height:20px}
+.chip .em{font-size:17px;line-height:1}
+.progress{display:flex;align-items:center;gap:10px;font-weight:900;font-size:13.5px}
+.progress .bar{flex:1;height:10px}
+.progress .bar i{background:linear-gradient(90deg,#7BD389,var(--green));transition:width .8s cubic-bezier(.3,1,.4,1)}
+.statsgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.statsgrid div{background:var(--card2);border-radius:14px;padding:10px 4px;text-align:center}
+.statsgrid b{display:block;font-family:var(--display);font-weight:400;font-size:22px;line-height:1.1}
+.statsgrid span{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.streak{display:inline-flex;align-items:center;gap:4px;background:#FFF1DC;color:#B4530B;border-radius:999px;padding:2px 9px;font-size:12.5px;font-weight:900;margin-top:4px}
+.hoodprog{background:var(--card2);border-radius:14px;padding:10px 14px;display:flex;flex-direction:column;gap:6px;text-align:left}
+/* splash scenery */
+.splash{overflow:hidden}
+.splash .hills{position:absolute;left:0;right:0;bottom:0;width:100%;height:42%;z-index:-1}
+.splash .cloud{position:absolute;width:120px;height:36px;border-radius:99px;background:rgba(255,255,255,.85);animation:cloud 26s linear infinite;z-index:-1}
+.splash .cloud::before{content:"";position:absolute;left:24px;top:-18px;width:56px;height:46px;border-radius:50%;background:inherit}
+@keyframes cloud{from{transform:translateX(-160px)}to{transform:translateX(110vw)}}
+.splash .vanbob{animation:vanbob .9s ease-in-out infinite alternate}
+@keyframes vanbob{to{transform:translateY(-2px)}}
+.splash .foot{font-size:12px;color:#1F4D17;opacity:.7;font-weight:800}
+.logo{animation:logoin .6s cubic-bezier(.3,1.6,.5,1)}
+@keyframes logoin{from{transform:rotate(-3deg) scale(.6);opacity:0}}
+/* comfort options */
+body.big .bubble{font-size:17.5px}
+body.big .stat span,body.big .dock button{font-size:13px}
+body.big .gb small{font-size:13.5px}
+body.big .muted,body.big .card p{font-size:15.5px!important}
+body.big .setrow b,body.big .earn div{font-size:17px}
+body.calm .rot,body.calm .postman,body.calm .env,body.calm .bar i,body.calm .progress .bar i{transition:none}
+body.calm .ripple,body.calm .postman.walk svg,body.calm .node.next,body.calm .sheet,body.calm .stars svg,body.calm .coins.bump,body.calm .cloud,body.calm .vanbob,body.calm .logo{animation:none}
+body.calm .stars svg{transform:none}
+body.calm .tile.warn::after,body.calm .tile.hinted::after{animation:none}
+@media (prefers-reduced-motion: reduce){.cloud,.vanbob,.logo{animation:none}}
+.policy{text-align:left;max-height:min(60vh,520px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:4px;font-size:15px;line-height:1.5}
+.policy p{margin:0 0 10px}.policy h3{font-size:17px;margin:14px 0 4px}
+body.big .policy{font-size:17px}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <defs>
+  <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#A3D96E"/><stop offset="1" stop-color="#8CCB5B"/></linearGradient>
+  <linearGradient id="gB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#98D264"/><stop offset="1" stop-color="#82C253"/></linearGradient>
+  <linearGradient id="wtr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6CCBF0"/><stop offset="1" stop-color="#3D9DD3"/></linearGradient>
+  <radialGradient id="leaf" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#8FD45E"/><stop offset=".6" stop-color="#4FA33B"/><stop offset="1" stop-color="#2F7A2C"/></radialGradient>
+  <linearGradient id="plank" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#B9844E"/><stop offset=".5" stop-color="#D4A36B"/><stop offset="1" stop-color="#B9844E"/></linearGradient>
+  <linearGradient id="vanG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F26A5D"/><stop offset="1" stop-color="#C9372C"/></linearGradient>
+ </defs>
+</svg>
+
+<div class="app" id="view"></div>
+<div class="dock"><nav aria-label="Main">
+  <button data-tab="play"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="8" width="24" height="17" rx="3" fill="#E5483B"/><path d="M4 11l12 8 12-8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/></svg>Play</button>
+  <button data-tab="map"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 8l8-3 8 3 8-3v19l-8 3-8-3-8 3z" fill="#3FB861"/><path d="M12 5v19M20 8v19" stroke="#278643" stroke-width="2"/><circle cx="22" cy="13" r="3" fill="#E5483B" stroke="#fff" stroke-width="1.5"/></svg>Map</button>
+  <button data-tab="cards"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="7" width="26" height="18" rx="2" fill="#FFC93C" transform="rotate(-6 16 16)"/><rect x="18" y="9" width="7" height="8" fill="#E5483B" transform="rotate(-6 16 16)"/><path d="M7 16h8M7 20h6" stroke="#8A5A00" stroke-width="2" stroke-linecap="round" transform="rotate(-6 16 16)"/></svg>Postcards</button>
+  <button data-tab="test"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="16" width="5" height="11" rx="1.5" fill="#3C8CE7"/><rect x="13.5" y="8" width="5" height="19" rx="1.5" fill="#E5483B"/><rect x="22" y="12" width="5" height="15" rx="1.5" fill="#FFC93C"/></svg>Playtest</button>
+  <button data-tab="settings"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4l2.6 2.8 3.8-.6.8 3.7 3.4 1.8-1.4 3.6 1.4 3.6-3.4 1.8-.8 3.7-3.8-.6L16 28l-2.6-2.8-3.8.6-.8-3.7-3.4-1.8 1.4-3.6-1.4-3.6 3.4-1.8.8-3.7 3.8.6z" fill="#8A97AD"/><circle cx="16" cy="16" r="4.5" fill="#fff"/></svg>Settings</button>
+</nav></div>
+<div id="overlay"></div>
+<script src="config.js"></script>
+<script src="native.js"></script>
+<script>
+// GEN-START
+const DX={1:0,2:1,4:0,8:-1}, DY={1:-1,2:0,4:1,8:0}, OPP={1:4,2:8,4:1,8:2};
+const BASE={straight:5,corner:3,end:1};
+const rot1=m=>((m<<1)|(m>>3))&15;
+function rotM(m,k){k=((k%4)+4)%4;while(k--)m=rot1(m);return m}
+function maskOf(c){return c.kind==='road'?rotM(BASE[c.type],c.r):0}
+function solFor(M){for(const t of ['straight','corner','end'])for(let k=0;k<4;k++)if(rotM(BASE[t],k)===M)return{type:t,rot:k};return null}
+function tapsFor(c){const d=((c.sol-c.r)%4+4)%4;return c.type==='straight'&&!c.oneway?d%2:d}
+function rng(seed){let s=seed>>>0;return function(){s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function dirTo(a,b,n){const dx=b%n-a%n,dy=Math.floor(b/n)-Math.floor(a/n);return dx===1?2:dx===-1?8:dy===1?4:1}
+
+function trace(lv){
+  const {n,cells,path}=lv;let cur=path[0];let d=maskOf(cells[cur]);const seq=[cur],visited=[];
+  for(let g=0;g<n*n+2;g++){
+    const x=cur%n+DX[d],y=Math.floor(cur/n)+DY[d];
+    if(x<0||y<0||x>=n||y>=n)return{seq,visited,end:'edge',stop:cur,next:null};
+    const nx=y*n+x,c=cells[nx],m=maskOf(c);
+    if(!(m&OPP[d]))return{seq,visited,end:'gap',stop:cur,next:nx};
+    if(c.oneway&&rotM(4,c.r)!==OPP[d])return{seq,visited,end:'oneway',stop:cur,next:nx};
+    seq.push(nx);
+    if(c.role==='house')visited.push(c.order);
+    if(c.role==='finish')return{seq,visited,end:'finish',stop:nx};
+    const out=m&~OPP[d];
+    if(!out)return{seq,visited,end:'gap',stop:nx,next:null};
+    d=out;cur=nx;
+  }
+  return{seq,visited,end:'gap',stop:cur,next:null};
+}
+function solved(lv,t){t=t||trace(lv);if(t.end!=='finish'||t.visited.length!==lv.houses)return false;
+  if(lv.ordered)for(let i=0;i<t.visited.length;i++)if(t.visited[i]!==i+1)return false;return true}
+
+function makeLevel(cfg,seed){
+  const R=rng(seed),ri=k=>Math.floor(R()*k),n=cfg.n;
+  const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=ri(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+  const nbrs=i=>{const x=i%n,y=Math.floor(i/n),o=[];if(y>0)o.push(i-n);if(x<n-1)o.push(i+1);if(y<n-1)o.push(i+n);if(x>0)o.push(i-1);return o};
+  function findPath(L){
+    for(let t=0;t<20;t++){
+      const start=ri(n*n),path=[start],vis=new Set(path);let steps=0;
+      const dfs=()=>{if(path.length===L)return true;if(++steps>3000)return false;
+        for(const x of shuffle(nbrs(path[path.length-1]).filter(x=>!vis.has(x)))){path.push(x);vis.add(x);if(dfs())return true;path.pop();vis.delete(x)}return false};
+      if(dfs())return path;
+    }return null;
+  }
+  for(let attempt=0;attempt<900;attempt++){
+    const L=cfg.len[0]+ri(cfg.len[1]-cfg.len[0]+1);
+    const path=findPath(L);if(!path)continue;
+    if(n>4&&nbrs(path[0]).includes(path[L-1]))continue;
+    const masks=path.map((p,i)=>(i>0?dirTo(p,path[i-1],n):0)|(i<L-1?dirTo(p,path[i+1],n):0));
+    let river=null;
+    if(cfg.bridge){
+      const opts=[];for(let k=1;k<n-1;k++){opts.push(['col',k]);opts.push(['row',k])}
+      for(const [axis,k] of shuffle(opts)){
+        const on=i=>axis==='col'?path[i]%n===k:Math.floor(path[i]/n)===k;
+        const idx=path.map((_,i)=>i).filter(on);
+        if(!idx.length||idx.some(i=>i===0||i===L-1||masks[i]!==(axis==='col'?10:5)))continue;
+        river={axis,k,bridges:new Set(idx.map(i=>path[i]))};break;
+      }
+      if(!river)continue;
+    }
+    const inRiver=i=>river&&(river.axis==='col'?i%n===river.k:Math.floor(i/n)===river.k);
+    const cells=[];for(let i=0;i<n*n;i++)cells.push({kind:inRiver(i)?'water':'grass'});
+    path.forEach((p,i)=>{const s=solFor(masks[i]);
+      cells[p]={kind:'road',type:s.type,sol:s.rot,r:s.rot,fixed:i===0||i===L-1,role:i===0?'start':i===L-1?'finish':null,bridge:inRiver(p),onPath:true}});
+    const cand=[];for(let i=1;i<L-1;i++)if(!inRiver(path[i]))cand.push(i);
+    if(cand.length<cfg.houses)continue;
+    const picks=shuffle(cand.slice()).slice(0,cfg.houses).sort((a,b)=>a-b);
+    picks.forEach((i,k)=>{cells[path[i]].role='house';cells[path[i]].order=k+1});
+    if(cfg.oneway)for(let i=1;i<L-1;i++){const c=cells[path[i]];
+      if(c.type!=='straight'||c.bridge||c.role||R()>=cfg.oneway)continue;
+      const inSide=dirTo(path[i],path[i-1],n);for(let k=0;k<4;k++)if(rotM(5,k)===masks[i]&&rotM(4,k)===inSide){c.sol=k;c.r=k}
+      c.oneway=true}
+    const pathSet=new Set(path);
+    for(let i=0;i<n*n;i++){if(pathSet.has(i)||cells[i].kind==='water')continue;const r=R();
+      if(r<cfg.block)cells[i]={kind:'block',v:ri(2)};
+      else if(r<cfg.block+cfg.decoy){const ty=R()<.5?'straight':'corner';cells[i]={kind:'road',type:ty,r:ri(4),fixed:false,role:null};if(cfg.oneway&&ty==='straight'&&R()<cfg.oneway)cells[i].oneway=true}}
+    if(river&&R()<.7){const w=[];for(let i=0;i<n*n;i++)if(cells[i].kind==='water')w.push(i);
+      if(w.length){const i=w[ri(w.length)];cells[i]={kind:'road',type:'straight',r:ri(4),fixed:false,role:null,bridge:true}}}
+    const mid=path.slice(1,-1).map(p=>cells[p]);
+    const lv={n,cells,path,houses:cfg.houses,ordered:!!cfg.ordered,bridge:!!river};
+    let ok=false;
+    for(let s=0;s<80;s++){mid.forEach(c=>c.r=ri(4));
+      const min=mid.reduce((a,c)=>a+tapsFor(c),0);
+      if(min>=cfg.minTaps&&!solved(lv)){lv.minMoves=min;ok=true;break}}
+    if(!ok)continue;
+    lv.limit=cfg.limit?Math.ceil(lv.minMoves*1.5):null;
+    lv.init=cells.map(c=>c.r);
+    return lv;
+  }
+  if(cfg.bridge)return makeLevel({...cfg,bridge:0},seed+1);
+  return makeLevel({...cfg,minTaps:Math.max(1,cfg.minTaps-2),len:cfg.minTaps<=3?[Math.max(4,cfg.len[0]-2),Math.max(4,cfg.len[1]-2)]:cfg.len},seed+1);
+}
+
+const CFG=[null,
+ {n:4,len:[4,5],houses:1,decoy:0,block:0,minTaps:2},
+ {n:4,len:[6,6],houses:1,decoy:.25,block:0,minTaps:3},
+ {n:4,len:[7,8],houses:2,decoy:.35,block:0,minTaps:4},
+ {n:5,len:[8,9],houses:2,decoy:.35,block:.05,minTaps:5},
+ {n:5,len:[10,11],houses:2,decoy:.4,block:.1,minTaps:6},
+ {n:5,len:[9,10],houses:2,decoy:.35,block:0,bridge:1,minTaps:5},
+ {n:5,len:[10,11],houses:2,decoy:.4,block:.05,bridge:1,minTaps:7,limit:1},
+ {n:6,len:[12,13],houses:3,decoy:.4,block:.05,bridge:1,minTaps:8,limit:1},
+ {n:6,len:[13,14],houses:3,decoy:.45,block:.05,bridge:1,minTaps:9,limit:1},
+ {n:6,len:[14,15],houses:3,decoy:.45,block:.1,bridge:1,minTaps:10,limit:1},
+ {n:5,len:[10,11],houses:2,decoy:.45,block:.15,ordered:1,minTaps:8,limit:1},
+ {n:6,len:[12,13],houses:3,decoy:.45,block:.1,ordered:1,minTaps:10,limit:1},
+ {n:6,len:[13,14],houses:3,decoy:.45,block:.15,ordered:1,minTaps:11,limit:1},
+ {n:6,len:[15,16],houses:3,decoy:.5,block:.1,ordered:1,minTaps:12,limit:1},
+ {n:6,len:[16,17],houses:4,decoy:.5,block:.1,ordered:1,minTaps:13,limit:1},
+ {n:6,len:[14,15],houses:3,decoy:.45,block:.05,ordered:1,bridge:1,minTaps:12,limit:1},
+ {n:7,len:[17,18],houses:4,decoy:.45,block:.08,ordered:1,bridge:1,minTaps:14,limit:1},
+ {n:7,len:[19,20],houses:4,decoy:.5,block:.08,ordered:1,bridge:1,minTaps:15,limit:1},
+ {n:7,len:[21,22],houses:4,decoy:.5,block:.1,ordered:1,bridge:1,minTaps:16,limit:1},
+ {n:7,len:[23,24],houses:5,decoy:.5,block:.08,ordered:1,bridge:1,minTaps:18,limit:1}];
+const levelSeed=id=>20261009+id*7919;
+// Endless levels: 1-20 are hand-tuned above; from 21 on, difficulty is computed from the level number.
+// Each neighborhood of 5 starts with an easier "breather" and ends with a tricky level.
+// Difficulty climbs until about level 100, then stays at the maximum with fresh layouts forever.
+function cfgFor(id){
+  if(id<=20)return CFG[id];
+  const k=id-21,pos=(id-1)%5,d=Math.min(1,k/80),breather=pos===0;
+  let n=d<.35?7:8;if(breather)n--;
+  const L=Math.round(n*n*(.4+.16*d+pos*.015));
+  const houses=Math.max(2,Math.min(6,3+Math.floor(d*2.5)+(pos===4?1:0)-(breather?1:0)));
+  return{n,len:[L,L+2],houses,decoy:.5,block:.06+.04*d,ordered:id%4!==2?1:0,bridge:(id%2===1||d>.6)?1:0,
+    oneway:id<=22?.7:.3+.3*d,minTaps:Math.round(L*(.7+.2*d)),limit:1};
+}
+// GEN-END
+
+const HOOD_NAMES=['Maple Lane','Harbor Row','Old Town','Hilltop','Cherry Hill','Lantern Square','Pine Valley','Seaside Bay','Clover Fields','Market Street','Snowy Peaks','Orchard Road','Lighthouse Cove','Tulip Gardens','Canal Quarter','Sunset Ridge','Desert Springs','Rainbow Row','Misty Woods','Golden Docks'];
+const HOOD_CARDS=['Quiet streets, maple trees and the first route of your career.','Fishing boats, salty air and a river that only bridges can cross.','Crooked lanes under the clock tower. Every letter in its turn.','Windmills, long roads and a view over every street you served.',
+ 'Pink blossoms on every corner, and one-way streets to keep you sharp.','Paper lanterns glow over the square as the evening post goes out.','Tall pines, cabin mailboxes and the smell of fresh wood.','Beach umbrellas, sandy porches and postcards from the sea.',
+ 'Rolling green fields where every fourth clover brings good mail.','Fruit stalls, bakers and the busiest letterboxes in town.','Snow on the roofs and warm letters in every sack.','Apple trees heavy with fruit line every road.',
+ 'A tall lighthouse keeps watch while you deliver along the cliffs.','Windmills turn over rows of red and yellow tulips.','Little boats bob along the canals between the houses.','The sun sets slowly over the last round of the day.',
+ 'Cactus gardens and adobe houses under a big blue sky.','Every house a different color, every route a puzzle.','Soft fog rolls through the trees. Watch every turn.','Cranes and cargo ships at the busiest port on your route.'];
+const ROMAN=['','','II','III','IV','V','VI','VII','VIII','IX','X'];
+function hood(hi){const t=hi%HOOD_NAMES.length,lap=Math.floor(hi/HOOD_NAMES.length);
+  return{i:hi,theme:t,name:HOOD_NAMES[t]+(lap?' '+(ROMAN[lap+1]||lap+1):''),levels:[1,2,3,4,5].map(k=>hi*5+k),card:HOOD_CARDS[t]}}
+const hoodOf=id=>hood(Math.floor((id-1)/5));
+const INTRO={1:'Tap a road to turn it. Link the post office to the house, then on to the mail van. Glowing roads are connected.',
+ 2:'Some roads lead nowhere. Only use the ones you need.',
+ 3:'Two houses this time. Pass both before reaching the van.',
+ 6:'New: the river! Only a bridge crosses it, and bridges turn too.',
+ 7:'Moves count from now on. Run out and you can buy 5 more, watch an ad, or restart for free.',
+ 11:'New: numbered houses. Deliver to 1, then 2, in that order.',
+ 16:'Hilltop mixes everything: bridges, numbered houses and longer roads.',
+ 21:'New: one-way streets! The arrows show the only way the postman may drive. Turning them around takes more taps.',
+ 49:'From here the town gets bigger: 8 × 8 streets and up to 6 houses.'};
+
+const KEY='pocket-postman-v1';
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>ymd(new Date());
+const yesterday=()=>{const d=new Date();d.setDate(d.getDate()-1);return ymd(d)};
+function blank(){return{unlocked:1,done:{},points:0,ads:{date:'',count:0},dailyDone:'',stats:{},days:[],lastAdAt:0,sinceAd:0,streak:{n:0,last:''}}}
+// Player comfort options (per device): relaxed = no move limits, big = larger text, calm = less motion.
+const pref=k=>{try{return localStorage.getItem('pp-'+k)==='on'}catch(e){return false}};
+const setPref=(k,on)=>{try{localStorage.setItem('pp-'+k,on?'on':'off')}catch(e){}applyPrefs()};
+function applyPrefs(){document.body.classList.toggle('big',pref('big'));document.body.classList.toggle('calm',pref('calm'))}
+applyPrefs();
+// A daily streak stays alive until a whole day is skipped.
+const streakNow=()=>{const s=save.streak;return s&&(s.last===today()||s.last===yesterday())?s.n:0};
+const totalStars=()=>Object.keys(save.done).reduce((a,l)=>a+starsOf(+l),0);
+let save=(()=>{try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.done)return Object.assign(blank(),v)}catch(e){}return blank()})();
+function persist(){const j=JSON.stringify(save);try{localStorage.setItem(KEY,j)}catch(e){}Native.saveCopy(j)}
+// Don't persist here: on a wiped WebView that would overwrite the durable copy before boot() can restore it.
+function stat(id){return save.stats[id]||(save.stats[id]={plays:0,taps:0,fails:0,hints:0,extra:0,ads:0,time:null,quitMoves:null})}
+function adsLeft(){if(save.ads.date!==today())save.ads={date:today(),count:0};return 5-save.ads.count}
+const starsOf=id=>{const d=save.done[id];if(!d)return 0;return d.stars||(d.bonus?3:1)};
+
+const cache={};
+function getLevel(id){
+  if(id==='daily'){const t=today();if(!cache['d'+t]){const seed=Number(t.replace(/-/g,''));
+    cache['d'+t]=makeLevel({n:6,len:[13,15],houses:3,decoy:.45,block:.08,ordered:1,bridge:seed%2,minTaps:10,limit:1},seed)}return cache['d'+t]}
+  return cache[id]||(cache[id]=makeLevel(cfgFor(id),levelSeed(id)));
+}
+const state={view:'play',id:null,lvl:null,moves:0,limit:null,hints:0,busy:false,msg:'',msgType:''};
+const RM=()=>pref('calm')||matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- art ----------
+const hash=i=>{let h=(i+1)*2654435761>>>0;return()=>{h^=h<<13;h>>>=0;h^=h>>17;h^=h<<5;h>>>=0;return h/4294967296}};
+const SPOTS=[[13,13],[87,13],[13,87],[87,87],[16,72],[84,28],[28,84],[72,16]];
+function decor(i){const r=hash(i*7+3);let s='';const k=1+Math.floor(r()*3);
+  const spots=SPOTS.slice().sort(()=>r()-.5).slice(0,k);
+  for(const [x,y] of spots){const t=r();
+    if(t<.4)s+=`<path d="M${x-5} ${y+3}q1.5-7 3 0q1-9 2.5 0q1.5-7 3 0" fill="none" stroke="#5C9D38" stroke-width="1.6" stroke-linecap="round"/>`;
+    else if(t<.7){const c=['#FFFFFF','#FFE066','#FF8FB1','#B89CFF'][Math.floor(r()*4)];s+=`<g><circle cx="${x}" cy="${y}" r="2.6" fill="${c}"/><circle cx="${x+5}" cy="${y+3}" r="2.2" fill="${c}"/><circle cx="${x}" cy="${y}" r=".9" fill="#E8A21B"/><circle cx="${x+5}" cy="${y+3}" r=".8" fill="#E8A21B"/></g>`}
+    else if(t<.85)s+=`<ellipse cx="${x}" cy="${y}" rx="4.5" ry="3.2" fill="#C9C4B4"/><ellipse cx="${x-1}" cy="${y-1}" rx="2.4" ry="1.4" fill="#E2DED2"/>`;
+    else s+=`<ellipse cx="${x}" cy="${y+3}" rx="7" ry="2.5" fill="rgba(0,0,0,.15)"/><circle cx="${x}" cy="${y}" r="6" fill="url(#leaf)"/>`;}
+  return s}
+const TREE=(x,y,s)=>`<ellipse cx="${x+2}" cy="${y+s*.9}" rx="${s*.9}" ry="${s*.3}" fill="rgba(0,0,0,.2)"/><rect x="${x-2}" y="${y+s*.2}" width="4" height="${s*.7}" rx="1.5" fill="#7A4B2A"/><circle cx="${x}" cy="${y}" r="${s}" fill="url(#leaf)"/><circle cx="${x-s*.35}" cy="${y-s*.35}" r="${s*.3}" fill="rgba(255,255,255,.18)"/>`;
+function bgSVG(c,i,n){
+  if(c.kind==='water'||c.bridge)return `<rect width="100" height="100" fill="url(#wtr)"/><g class="ripple" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.5" stroke-linecap="round"><path d="M10 24q6-5 12 0t12 0"/><path d="M58 70q6-5 12 0t12 0"/><path d="M18 84q5-4 10 0"/><path d="M66 18q5-4 10 0"/></g>`;
+  let s=`<rect width="100" height="100" fill="url(#${((i%n)+Math.floor(i/n))%2?'gB':'gA'})"/>`;
+  if(c.kind!=='block')return s+decor(i);
+  const v=(c.v||0)+(i%3===0?2:0);
+  if(v===0)return s+TREE(32,40,20)+TREE(68,58,22)+TREE(30,78,12);
+  if(v===1)return s+`<ellipse cx="50" cy="80" rx="38" ry="6" fill="rgba(0,0,0,.18)"/><rect x="14" y="44" width="72" height="18" rx="3" fill="#fff" stroke="#3A2E2A" stroke-width="2"/><path d="M22 44l-8 18M38 44l-12 18M54 44l-12 18M70 44l-12 18M86 44l-12 18" stroke="#E5483B" stroke-width="7"/><rect x="14" y="44" width="72" height="18" rx="3" fill="none" stroke="#3A2E2A" stroke-width="2"/><path d="M22 62v18M78 62v18" stroke="#3A2E2A" stroke-width="3"/><path d="M42 86L48 66L54 86Z" fill="#FF8A2B" stroke="#3A2E2A" stroke-width="1.5"/><path d="M44.5 78h7" stroke="#fff" stroke-width="3"/>`;
+  if(v===2)return s+`<rect x="12" y="30" width="76" height="46" rx="8" fill="#8A5A36"/><rect x="15" y="33" width="70" height="40" rx="6" fill="#6E4527"/>${[22,34,46,58,70,80].map((x,k)=>`<circle cx="${x}" cy="${44+(k%2)*12}" r="5" fill="${['#FF6B8B','#FFD23F','#FFFFFF','#B89CFF','#FF8A2B','#FF6B8B'][k]}"/><circle cx="${x}" cy="${44+(k%2)*12}" r="1.6" fill="#E8A21B"/>`).join('')}<path d="M10 80h80" stroke="#F4EFE6" stroke-width="3"/>${[14,26,38,50,62,74,86].map(x=>`<path d="M${x} 84V70l2-3 2 3v14" fill="#F4EFE6" stroke="#B9B2A2" stroke-width="1"/>`).join('')}`;
+  return s+`<ellipse cx="52" cy="76" rx="36" ry="8" fill="rgba(0,0,0,.18)"/><path d="M20 72Q18 44 40 40Q50 26 66 38Q86 42 82 72Z" fill="#9AA0A6" stroke="#5E646B" stroke-width="2"/><path d="M30 50Q38 42 48 46" fill="none" stroke="#C8CDD2" stroke-width="3" stroke-linecap="round"/>`+TREE(80,26,10);
+}
+const ROADP={straight:'M50 -2V102',corner:'M50 -2V18Q50 50 82 50H102',end:'M50 -2V56'};
+function roadSVG(c){
+  if(c.bridge)return `<rect x="22" y="-2" width="60" height="104" fill="rgba(0,40,80,.25)"/><rect x="24" y="-2" width="52" height="104" fill="url(#plank)"/>${[8,22,36,50,64,78,92].map(y=>`<path d="M24 ${y}H76" stroke="rgba(90,55,25,.45)" stroke-width="1.6"/>`).join('')}<rect x="21" y="-2" width="6" height="104" fill="#7A4B2A"/><rect x="73" y="-2" width="6" height="104" fill="#7A4B2A"/>${[10,40,70].map(y=>`<rect x="19.5" y="${y}" width="9" height="9" rx="2" fill="#5E381C"/><rect x="71.5" y="${y}" width="9" height="9" rx="2" fill="#5E381C"/>`).join('')}<path d="M50 0V100" class="d"/>`;
+  const p=ROADP[c.type],cap=c.type==='end'?' stroke-linecap="round"':'';
+  return `<path d="${p}" fill="none" stroke="#BDB49E" stroke-width="54"${cap}/><path d="${p}" fill="none" stroke="#E6DFCC" stroke-width="50"${cap}/><path d="${p}" fill="none" stroke="#F4F1E8" stroke-width="38"${cap}/><path d="${p}" fill="none" stroke="#545B66" stroke-width="35"${cap}/>${c.oneway?'<path d="M36 42L50 28L64 42M36 76L50 62L64 76" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>':`<path d="${c.type==='end'?'M50 0V42':p}" class="d"/>`}`;
+}
+const HOUSE_COL=[['#F7E3B5','#E5483B'],['#CFE9FA','#2F6FB5'],['#FAD3CF','#8E3BA8'],['#DDEFC0','#2E8B57'],['#FFE7A6','#D46A1E']];
+function houseSVG(c,ordered){const [w,r]=HOUSE_COL[(c.order-1)%5];
+  return `<svg class="ico" viewBox="0 0 60 60" aria-hidden="true"><ellipse cx="30" cy="55" rx="21" ry="4" fill="rgba(0,0,0,.22)"/>
+  <rect x="37" y="9" width="6" height="12" fill="#B5543E" stroke="#3A2E2A" stroke-width="1.4"/>
+  <rect x="12" y="26" width="36" height="28" rx="2" fill="${w}" stroke="#3A2E2A" stroke-width="1.6"/><rect x="38" y="27" width="9" height="26" fill="rgba(0,0,0,.08)"/>
+  <path d="M7 29L30 8L53 29Z" fill="${r}" stroke="#3A2E2A" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 27L30 12V16L17 27Z" fill="rgba(255,255,255,.28)"/>
+  <rect x="15" y="31" width="11" height="10" rx="1" fill="#CFEFFF" stroke="#3A2E2A" stroke-width="1.4"/><path d="M20.5 31V41M15 36H26" stroke="#3A2E2A" stroke-width="1"/>
+  <rect x="30" y="37" width="10" height="17" rx="1.5" fill="#7A4B2A" stroke="#3A2E2A" stroke-width="1.4"/><circle cx="37.5" cy="46" r="1.1" fill="#FFD25A"/>
+  <path d="M8 46V55" stroke="#3A2E2A" stroke-width="1.6"/><rect x="3.5" y="40" width="9" height="7" rx="2" fill="#E5483B" stroke="#3A2E2A" stroke-width="1.2"/>
+  ${ordered?`<circle cx="12" cy="12" r="9" fill="#1F2B45" stroke="#fff" stroke-width="2"/><text x="12" y="16.3" text-anchor="middle" font-size="12.5" font-family="Lilita One,Arial Rounded MT Bold,sans-serif" fill="#fff">${c.order}</text>`:''}
+  <g class="env"><circle cx="48" cy="12" r="9.5" fill="#3FB861" stroke="#fff" stroke-width="2"/><path d="M43.5 12.2l3 3 5.5-6" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`}
+const PO=`<svg class="ico" viewBox="0 0 60 60" aria-hidden="true"><ellipse cx="30" cy="55" rx="24" ry="4" fill="rgba(0,0,0,.22)"/><path d="M47 4V22" stroke="#3A2E2A" stroke-width="1.6"/><path d="M47 4h10l-3 3.5 3 3.5H47Z" fill="#E5483B"/><rect x="8" y="22" width="44" height="32" rx="2" fill="#F4EFE6" stroke="#3A2E2A" stroke-width="1.6"/><rect x="4" y="16" width="52" height="11" rx="3" fill="#E5483B" stroke="#3A2E2A" stroke-width="1.6"/><text x="30" y="25" text-anchor="middle" font-size="9" font-family="Lilita One,Arial Rounded MT Bold,sans-serif" fill="#fff" letter-spacing="1">POST</text><rect x="12" y="31" width="10" height="9" rx="1" fill="#CFEFFF" stroke="#3A2E2A" stroke-width="1.3"/><rect x="38" y="31" width="10" height="9" rx="1" fill="#CFEFFF" stroke="#3A2E2A" stroke-width="1.3"/><rect x="24" y="36" width="12" height="18" rx="1.5" fill="#2F6FB5" stroke="#3A2E2A" stroke-width="1.4"/><path d="M30 36V54" stroke="#3A2E2A" stroke-width="1"/><rect x="12" y="44" width="8" height="5" rx="1" fill="#FFC93C" stroke="#3A2E2A" stroke-width="1"/></svg>`;
+const VAN=`<svg class="ico" viewBox="0 0 60 60" aria-hidden="true"><ellipse cx="30" cy="51" rx="26" ry="4" fill="rgba(0,0,0,.22)"/><path d="M4 22Q4 18 8 18H38L48 28L56 31V44Q56 47 53 47H7Q4 47 4 44Z" fill="url(#vanG)" stroke="#3A2E2A" stroke-width="1.6" stroke-linejoin="round"/><path d="M39 21L46 29H39Z" fill="#CFEFFF" stroke="#3A2E2A" stroke-width="1.2"/><path d="M4 37H56" stroke="#FFC93C" stroke-width="3"/><rect x="11" y="23" width="16" height="10" rx="1.5" fill="#fff" stroke="#3A2E2A" stroke-width="1.2"/><path d="M11 24l8 5 8-5" fill="none" stroke="#3A2E2A" stroke-width="1.2"/><circle cx="15" cy="47" r="5.5" fill="#2B2B33"/><circle cx="15" cy="47" r="2.2" fill="#C9CED6"/><circle cx="45" cy="47" r="5.5" fill="#2B2B33"/><circle cx="45" cy="47" r="2.2" fill="#C9CED6"/><rect x="52" y="33" width="4" height="3" rx="1" fill="#FFE066"/></svg>`;
+const POSTMAN=`<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="37" rx="9" ry="2.5" fill="rgba(0,0,0,.25)"/><rect x="14" y="29" width="4.5" height="8" rx="2" fill="#1F2B45"/><rect x="21.5" y="29" width="4.5" height="8" rx="2" fill="#1F2B45"/><rect x="11" y="18" width="18" height="14" rx="6" fill="#3C8CE7" stroke="#1F2B45" stroke-width="1.4"/><path d="M13 19L27 30" stroke="#7A4B2A" stroke-width="2.4"/><rect x="22" y="24" width="10" height="8" rx="2" fill="#C98A45" stroke="#1F2B45" stroke-width="1.2"/><rect x="24" y="25.5" width="6" height="3.5" fill="#fff"/><circle cx="20" cy="12" r="7.5" fill="#F3C9A0" stroke="#1F2B45" stroke-width="1.4"/><circle cx="17.5" cy="12.5" r="1" fill="#1F2B45"/><circle cx="22.5" cy="12.5" r="1" fill="#1F2B45"/><path d="M18 15.5q2 1.5 4 0" fill="none" stroke="#1F2B45" stroke-width="1" stroke-linecap="round"/><path d="M12 9Q12 3 20 3T28 9Z" fill="#2864AE" stroke="#1F2B45" stroke-width="1.4"/><path d="M11 9H31" stroke="#1F2B45" stroke-width="2.4" stroke-linecap="round"/><rect x="18" y="4.5" width="4" height="3" rx="1" fill="#FFC93C"/></svg>`;
+const COIN=`<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="#F6B92B"/><circle cx="14" cy="14" r="10" fill="#FFD45C" stroke="#E09A12" stroke-width="1.5"/><rect x="8" y="10" width="12" height="9" rx="1.5" fill="#fff" stroke="#B87708" stroke-width="1.3"/><path d="M8 11l6 4 6-4" fill="none" stroke="#B87708" stroke-width="1.3"/></svg>`;
+const STAR=on=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5L2.5 9.3l6.6-.8z" fill="${on?'#FFC93C':'#DCE3EB'}" stroke="${on?'#D69A0C':'#BAC5D2'}" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8.8l3-1.3" stroke="rgba(255,255,255,.7)" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+const ICON={
+ map:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z" fill="#3FB861"/><path d="M9 4v14M15 6v14" stroke="#278643" stroke-width="1.8"/></svg>',
+ steps:'<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="8" cy="9" rx="3.2" ry="5" fill="#3C8CE7"/><ellipse cx="16" cy="14" rx="3.2" ry="5" fill="#3C8CE7"/><rect x="5.5" y="15" width="5" height="3" rx="1.5" fill="#3C8CE7"/><rect x="13.5" y="20" width="5" height="3" rx="1.5" fill="#3C8CE7" transform="translate(0 -1)"/></svg>',
+ star:STAR(true),
+ house:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11L12 4L20 11V20H4Z" fill="#E5483B"/><rect x="10" y="14" width="4" height="6" fill="#fff"/></svg>',
+ hint:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" fill="#fff"/><rect x="8.5" y="18.5" width="7" height="3" rx="1.5" fill="#fff"/></svg>',
+ reset:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M4 3v5h5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ lock:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2.5" fill="#fff"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="#fff" stroke-width="2.6"/></svg>',
+ lockdark:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2.5" fill="#5B6884"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="#5B6884" stroke-width="2.6"/></svg>'};
+
+// ---------- sound & music (all generated live with Web Audio: no files, works offline) ----------
+const SFX=(()=>{
+  let ctx=null,master,sfxBus,musicBus,delay,noiseBuf,timer=null,ducked=false;
+  const get=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:v==='1'}catch(e){return d}};
+  const put=(k,v)=>{try{localStorage.setItem(k,v?'1':'0')}catch(e){}};
+  let musicOn=get('pp-music',true),sfxOn=get('pp-sfx',true);
+  const MUSIC_VOL=.26,SFX_VOL=.85;
+  const N=n=>{const m=n.match(/^([A-G])(#?)(\d)$/);const i={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]]+(m[2]?1:0);return 440*Math.pow(2,(i+12*(+m[3]+1)-69)/12)};
+  function init(){
+    if(ctx){if(ctx.state==='suspended'&&!document.hidden&&!ducked)ctx.resume();return true}
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;
+    ctx=new AC();
+    const comp=ctx.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(ctx.destination);
+    master=ctx.createGain();master.gain.value=.9;master.connect(comp);
+    sfxBus=ctx.createGain();sfxBus.gain.value=sfxOn?SFX_VOL:0;sfxBus.connect(master);
+    musicBus=ctx.createGain();musicBus.gain.value=musicOn?MUSIC_VOL:0;musicBus.connect(master);
+    // a little echo gives the music some room
+    delay=ctx.createDelay(1);delay.delayTime.value=.27;const fb=ctx.createGain();fb.gain.value=.22;const wet=ctx.createGain();wet.gain.value=.25;
+    delay.connect(fb);fb.connect(delay);delay.connect(wet);wet.connect(musicBus);
+    noiseBuf=ctx.createBuffer(1,ctx.sampleRate*.5,ctx.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    return true;
+  }
+  function tone({f=440,f2=null,type='sine',t=0,d=.15,v=.25,a=.006,bus,echo=false,vib=0}){
+    if(!ctx)return;const now=ctx.currentTime+t;const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type;o.frequency.setValueAtTime(f,now);if(f2)o.frequency.exponentialRampToValueAtTime(f2,now+d*.9);
+    if(vib){const l=ctx.createOscillator(),lg=ctx.createGain();l.frequency.value=5.5;lg.gain.value=vib;l.connect(lg);lg.connect(o.frequency);l.start(now);l.stop(now+d+.1)}
+    g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(v,now+a);g.gain.exponentialRampToValueAtTime(.0001,now+d);
+    o.connect(g);g.connect(bus||sfxBus);if(echo)g.connect(delay);o.start(now);o.stop(now+d+.05);
+  }
+  function noise({t=0,d=.06,v=.15,freq=3000,q=.8,type='highpass',f2=null,bus}){
+    if(!ctx)return;const now=ctx.currentTime+t;const s=ctx.createBufferSource();s.buffer=noiseBuf;
+    const fl=ctx.createBiquadFilter();fl.type=type;fl.frequency.setValueAtTime(freq,now);fl.Q.value=q;if(f2)fl.frequency.exponentialRampToValueAtTime(f2,now+d);
+    const g=ctx.createGain();g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(v,now+.005);g.gain.exponentialRampToValueAtTime(.0001,now+d);
+    s.connect(fl);fl.connect(g);g.connect(bus||sfxBus);s.start(now,Math.random()*.3);s.stop(now+d+.02);
+  }
+  const bell=(f,t=0,v=.16,d=.6)=>{tone({f,t,d,v});tone({f:f*2.76,t,d:d*.35,v:v*.25});tone({f:f*5.4,t,d:d*.15,v:v*.1})};
+  const PENTA=['C5','D5','E5','G5','A5','C6','D6','E6','G6','A6','C7'].map(N);
+
+  // ---------- background music: cheerful marimba loop, C – G – Am – F ----------
+  const BPM=104,EIGHTH=60/BPM/2;
+  const CHORDS=[['C3','E4','G4','C5'],['G2','D4','G4','B4'],['A2','C4','E4','A4'],['F2','C4','F4','A4']].map(c=>c.map(N));
+  const MEL=[['E5','-','G5','-','C6','-','B5','G5'],['A5','-','G5','-','D5','-','-','-'],['C5','-','E5','-','A5','-','G5','E5'],['F5','-','E5','-','C5','-','-','-'],
+             ['E5','-','G5','-','C6','-','D6','C6'],['B5','-','G5','-','D5','-','G5','-'],['A5','-','C6','-','B5','-','A5','G5'],['F5','-','A5','-','G5','-','-','-']];
+  const ARP=[1,2,3,2,1,2,3,2];
+  let step=0,nextT=0;
+  function marimba(f,t,v){tone({f,t,d:.32,v,bus:musicBus,echo:true});tone({f:f*4,t,d:.06,v:v*.18,bus:musicBus})}
+  function schedule(){
+    while(nextT<ctx.currentTime+.12){
+      const t=nextT-ctx.currentTime,s=step%8,bar=Math.floor(step/8),chord=CHORDS[bar%4],withTune=Math.floor(bar/8)%3!==0;
+      if(s===0||s===4)tone({f:s===0?chord[0]:chord[0]*1.5,t,d:.45,v:.22,bus:musicBus});           // bass
+      marimba(chord[ARP[s]],t,s%2?.05:.075);                                          // arpeggio
+      if(s%2===1)noise({t,d:.035,v:.035,freq:7000,bus:musicBus});                                  // shaker
+      if(s===0&&bar%2===0)noise({t,d:.12,v:.05,freq:180,type:'lowpass',bus:musicBus});            // soft drum
+      if(withTune){const n=MEL[bar%8][s];if(n!=='-')tone({f:N(n),t,d:.38,v:.085,type:'triangle',bus:musicBus,echo:true,vib:3})}
+      nextT+=EIGHTH;step++;
+    }
+  }
+  function startMusic(){if(!ctx||timer)return;nextT=ctx.currentTime+.1;timer=setInterval(schedule,25)}
+  function stopMusic(){clearInterval(timer);timer=null}
+
+  document.addEventListener('visibilitychange',()=>{if(!ctx)return;document.hidden?ctx.suspend():(!ducked&&ctx.resume())});
+  document.addEventListener('pointerdown',()=>{if(ctx&&ctx.state==='suspended'&&!ducked)ctx.resume()},true);
+  // every button pops, except the board and buttons with their own sound
+  document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled||b.classList.contains('tile')||['go','sp','snd'].includes(b.id))return;api.click()},true);
+
+  const api={
+    unlock(){if(init())startMusic()},
+    click(){tone({f:520,f2:780,type:'triangle',d:.07,v:.16});noise({d:.02,v:.05,freq:4000})},
+    rotate(){const p=1+Math.random()*.08;noise({d:.035,v:.16,freq:2500*p,q:2,type:'bandpass'});tone({f:880*p,f2:620*p,type:'triangle',d:.06,v:.1})},
+    connect(n){bell(PENTA[Math.min(PENTA.length-1,Math.max(0,n-2)%PENTA.length)],0,.11,.4)},
+    warn(){tone({f:1046,type:'square',d:.05,v:.05});tone({f:784,type:'square',t:.16,d:.05,v:.05})},
+    go(){tone({f:1300,f2:1900,d:.12,v:.13});tone({f:1900,t:.15,d:.18,v:.13,vib:20})},
+    step(k){noise({d:.03,v:.05,freq:k%2?1200:1600,q:3,type:'bandpass'})},
+    house(i){const f=[N('G5'),N('A5'),N('C6'),N('D6'),N('E6'),N('G6')][Math.min(5,i-1)];bell(f,0,.18,.7);bell(f*1.5,.09,.12,.6)},
+    fail(){tone({f:N('G4'),f2:N('F#4'),type:'triangle',d:.3,v:.2});tone({f:N('F4'),f2:N('C4'),type:'triangle',t:.3,d:.55,v:.2,vib:6});noise({t:.3,d:.25,v:.06,freq:300,type:'lowpass'})},
+    outOfMoves(){[N('E5'),N('C5'),N('A4')].forEach((f,i)=>tone({f,type:'triangle',t:i*.16,d:.28,v:.17}))},
+    hint(){for(let i=0;i<6;i++)tone({f:1800+i*260+Math.random()*80,t:i*.045,d:.18,v:.07})},
+    whoosh(){noise({d:.28,v:.13,freq:350,f2:2600,q:1.5,type:'bandpass'})},
+    coins(){for(let i=0;i<3;i++){tone({f:N('B5'),t:i*.12,d:.08,v:.12,type:'square'});tone({f:N('E6'),t:i*.12+.07,d:.22,v:.12,type:'square'})}},
+    win(stars,earned,postcard){
+      api.duck(true,2.6);
+      [['C5',0],['E5',.1],['G5',.2],['C6',.32]].forEach(([n,t])=>{tone({f:N(n),t,d:.4,v:.15,type:'triangle'});tone({f:N(n)/2,t,d:.4,v:.08})});
+      tone({f:N('C6'),t:.32,d:.9,v:.08,vib:5});tone({f:N('E6'),t:.32,d:.9,v:.06});tone({f:N('G6'),t:.32,d:.9,v:.05});
+      for(let s=0;s<stars;s++)bell([N('E6'),N('G6'),N('C7')][s],.62+s*.18,.15,.8);
+      if(earned)setTimeout(()=>api.coins(),1300);
+      if(postcard)[['G5',1.7],['C6',1.85],['E6',2],['G6',2.15],['C7',2.3]].forEach(([n,t])=>bell(N(n),t,.12,.9));
+    },
+    duck(on,secs){if(!ctx)return;const now=ctx.currentTime;musicBus.gain.cancelScheduledValues(now);
+      if(secs){musicBus.gain.setTargetAtTime(musicOn?MUSIC_VOL*.25:0,now,.05);musicBus.gain.setTargetAtTime(musicOn?MUSIC_VOL:0,now+secs,.4);return}
+      ducked=on;if(on)ctx.suspend();else{musicBus.gain.setValueAtTime(musicOn?MUSIC_VOL:0,now);if(!document.hidden)ctx.resume()}},
+    get music(){return musicOn},get sfx(){return sfxOn},
+    setMusic(on){musicOn=on;put('pp-music',on);if(ctx)musicBus.gain.setTargetAtTime(on?MUSIC_VOL:0,ctx.currentTime,.1)},
+    setSfx(on){sfxOn=on;put('pp-sfx',on);if(ctx)sfxBus.gain.setTargetAtTime(on?SFX_VOL:0,ctx.currentTime,.02)},
+    toggleAll(){const on=!(musicOn||sfxOn);api.setMusic(on);api.setSfx(on);if(on){api.unlock();api.click()}},
+    icon(){const on=musicOn||sfxOn;return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#3C8CE7"/>${on?'<path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#3C8CE7" stroke-width="2.2" stroke-linecap="round"/>':'<path d="M16 9l5 6M21 9l-5 6" stroke="#E5483B" stroke-width="2.4" stroke-linecap="round"/>'}</svg>`}
+  };
+  return api;
+})();
+
+// ---------- views ----------
+const V=document.getElementById('view');
+function setTab(){document.querySelectorAll('[data-tab]').forEach(b=>{if(b.dataset.tab===state.view)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
+function render(){setTab();({play:renderPlay,map:renderMap,cards:renderCards,test:renderTest,settings:renderSettings})[state.view]();window.scrollTo(0,0)}
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{if(state.busy)return;state.view=b.dataset.tab;if(state.view==='play'&&(!state.lvl||state.won))loadLevel(nextLevel());else render()}));
+const nextLevel=()=>save.unlocked;
+const coins=()=>`<span class="coins" id="coins">${COIN}<span id="ptsv">${save.points}</span></span>`;
+function bumpCoins(){const c=document.getElementById('coins');if(!c)return;c.querySelector('#ptsv').textContent=save.points;c.classList.remove('bump');void c.offsetWidth;c.classList.add('bump')}
+
+function loadLevel(id){
+  if(state.lvl&&state.id!==id&&!state.won&&state.moves>0){stat(state.id).quitMoves=state.moves}
+  const base=getLevel(id);
+  state.id=id;state.base=base;state.won=false;state.lvl={...base,cells:base.cells.map((c,i)=>({...c,r:base.init[i]}))};
+  state.moves=0;state.limit=pref('relaxed')?null:base.limit;state.hints=0;state.startT=Date.now();state.busy=false;
+  state.msg=(id===7&&pref('relaxed')?'Relaxed mode is on, so there’s no move limit. Fewer moves still earn more stars.':INTRO[id])||(id==='daily'?'A fresh route every day. Deliver it for 25 points!':'Turn the roads to link the post office, every house and the mail van.');state.msgType='';
+  stat(id).plays++;persist();state.view='play';render();
+}
+
+function renderPlay(){
+  const lv=state.lvl,n=lv.n,id=state.id;
+  const title=id==='daily'?'Daily Route':'Level '+id;
+  const sub=id==='daily'?new Date().toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'}):hoodOf(id).name+(id>20&&(id-1)%5===4?' · Tricky':'');
+  let tiles='';
+  lv.cells.forEach((c,i)=>{
+    const rot=c.kind==='road'&&!c.fixed,tag=rot?'button':'div';
+    const road=c.kind==='road'?`<svg class="layer rot" viewBox="0 0 100 100" aria-hidden="true" style="transform:rotate(${c.r*90}deg)">${roadSVG(c)}</svg>`:'';
+    const ico=c.role==='house'?houseSVG(c,lv.ordered):c.role==='start'?PO:c.role==='finish'?VAN:'';
+    const label=rot?` aria-label="${c.role==='house'?'House '+(lv.ordered?c.order+' ':'')+'road':c.bridge?'Bridge':c.oneway?'One-way road':'Road'}, row ${Math.floor(i/n)+1}, column ${i%n+1}. Tap to turn."`:'';
+    tiles+=`<${tag} class="tile"${rot?' type="button"':''} data-i="${i}"${label}><svg class="layer" viewBox="0 0 100 100" aria-hidden="true">${bgSVG(c,i,n)}</svg>${road}${ico}</${tag}>`;
+  });
+  V.innerHTML=`
+  <div class="hud"><div class="hudl"><button class="round" type="button" id="tomap" aria-label="Back to map">${ICON.map}</button><button class="round" type="button" id="snd" aria-label="Sound on or off">${SFX.icon()}</button></div>
+   <div class="ribbon"><small>${sub}</small><h1>${title}</h1></div>${coins()}</div>
+  <div class="statbar" id="status"></div>
+  <div class="stage"><div class="board" id="board" style="--n:${n}">${tiles}<div class="postman" id="pm" hidden style="width:${100/n}%;height:${100/n}%"><span>${POSTMAN}</span></div></div></div>
+  <div class="tip"><div class="av">${POSTMAN}</div><div class="bubble ${state.msgType}" id="msg" aria-live="polite">${state.msg}</div></div>
+  <div class="actions">
+    <button class="gb yellow" type="button" id="hint">${ICON.hint.replace(/#fff/g,'#5A3B00')}Hint<small>30 coins</small></button>
+    <button class="gb red" type="button" id="go">Deliver!</button>
+    <button class="gb" type="button" id="reset">${ICON.reset}Restart<small>free</small></button>
+  </div>`;
+  document.getElementById('board').addEventListener('click',e=>{const t=e.target.closest('button.tile');if(t)tap(+t.dataset.i)});
+  document.getElementById('go').onclick=deliver;document.getElementById('hint').onclick=hint;
+  document.getElementById('reset').onclick=restart;document.getElementById('tomap').onclick=()=>{if(state.busy)return;state.view='map';render()};
+  document.getElementById('snd').onclick=()=>{SFX.toggleAll();document.getElementById('snd').innerHTML=SFX.icon()};
+  updateBoard();
+}
+function updateBoard(){
+  const lv=state.lvl,t=trace(lv),lit=new Set(t.seq);
+  document.querySelectorAll('#board .tile').forEach(el=>{const i=+el.dataset.i,c=lv.cells[i];el.classList.toggle('lit',lit.has(i));
+    const r=el.querySelector('.rot');if(r)r.style.transform=`rotate(${c.r*90}deg)`});
+  const low=state.limit&&state.limit-state.moves<=2;
+  const onRoute=t.visited.length;
+  let dots='';for(let k=0;k<lv.houses;k++)dots+=`<i class="${k<onRoute?'on':''}">${ICON.house}</i>`;
+  document.getElementById('status').innerHTML=
+   `<div class="stat${low?' warn':''}">${ICON.steps}<div><b>${state.moves}${state.limit?`<small style="font-size:13px;color:var(--muted)">/${state.limit}</small>`:''}</b><span>Moves</span></div></div>
+    <div class="stat">${ICON.star}<div><b>${lv.minMoves}</b><span>Best</span></div></div>
+    <div class="stat"><div><div class="hdots">${dots}</div><span>Houses</span></div></div>`;
+  const p=document.getElementById('ptsv');if(p)p.textContent=save.points;
+}
+function say(text,type){state.msg=text;state.msgType=type||'';const m=document.getElementById('msg');if(m){m.textContent=text;m.className='bubble '+(type||'')}}
+function flash(i,cls){const el=document.querySelector(`#board .tile[data-i="${i}"]`);if(!el)return;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);setTimeout(()=>el.classList.remove(cls),2500)}
+function clearGot(){document.querySelectorAll('#board .tile.got').forEach(e=>e.classList.remove('got'))}
+
+function tap(i){const _before=state.lvl?trace(state.lvl).seq.length:0;
+  if(state.busy||state.won)return;const c=state.lvl.cells[i];if(c.kind!=='road'||c.fixed)return;
+  if(state.limit&&state.moves>=state.limit){outOfMoves();return}
+  c.r++;state.moves++;Native.haptic('light');stat(state.id).taps++;persist();clearGot();updateBoard();
+  if(state.limit&&state.moves===state.limit)say('That was your last move. Press Deliver to try the route!','');
+  {const _after=trace(state.lvl).seq.length;SFX.rotate();if(_after>_before)SFX.connect(_after);if(state.limit&&state.limit-state.moves===2)SFX.warn()}
+}
+function restart(){if(state.busy||state.won)return;SFX.whoosh();const lv=state.lvl,base=state.base;
+  lv.cells.forEach((c,i)=>{if(c.kind==='road'&&!c.fixed)c.r+=((base.init[i]-c.r)%4+4)%4});
+  state.moves=0;state.limit=pref('relaxed')?null:base.limit;state.hints=0;clearGot();updateBoard();say('Back to the start. Moves reset.','')}
+function hint(){
+  if(state.busy||state.won)return;
+  if(save.points<30){sheet(`<div class="hero">${bigCoin()}</div><h2>Need 30 coins</h2><p class="muted">You have ${save.points}. Watch a short ad for 50, or keep trying. Every level can be solved without hints.</p>${adButton()}<button class="gb white wide" type="button" data-close>Keep trying</button>`,{ad:()=>hint()});return}
+  const lv=state.lvl;const wrong=lv.path.slice(1,-1).find(p=>tapsFor(lv.cells[p])>0);
+  if(wrong===undefined){say('The route is already right. Press Deliver!','good');return}
+  save.points-=30;state.hints++;stat(state.id).hints++;persist();SFX.hint();
+  const c=lv.cells[wrong];c.r+=((c.sol-c.r)%4+4)%4;
+  clearGot();updateBoard();bumpCoins();flash(wrong,'hinted');say('Hint used: the glowing tile now points the right way. Hints don’t use moves.','');
+}
+
+function deliver(){
+  if(state.busy||state.won)return;state.busy=true;
+  const lv=state.lvl,t=trace(lv),n=lv.n,pm=document.getElementById('pm'),fig=pm.querySelector('span');
+  const ok=solved(lv,t),step=RM()?70:230;clearGot();let hc=0;SFX.go();
+  const place=i=>{pm.style.left=(i%n)*100/n+'%';pm.style.top=Math.floor(i/n)*100/n+'%'};
+  pm.style.transition='none';place(t.seq[0]);pm.hidden=false;void pm.offsetWidth;pm.style.transition='';pm.classList.add('walk');fig.style.transform='';
+  t.seq.forEach((cell,k)=>setTimeout(()=>{
+    if(k>0){const dx=cell%n-t.seq[k-1]%n;if(dx)fig.style.transform=dx<0?'scaleX(-1)':''}
+    place(cell);const c=lv.cells[cell];if(k>0)SFX.step(k);
+    if(c.role==='house'){document.querySelector(`#board .tile[data-i="${cell}"]`).classList.add('got');SFX.house(++hc)}},k*step));
+  setTimeout(()=>{
+    pm.classList.remove('walk');
+    if(ok){win();return}
+    stat(state.id).fails++;persist();SFX.fail();Native.haptic('warning');
+    let text;
+    if(t.end==='finish'){const missing=lv.houses-t.visited.length;
+      text=missing>0?`I reached the van, but ${missing} ${missing>1?'houses are':'house is'} still waiting for mail.`:`Wrong order! This route goes ${t.visited.join(' → ')}. Deliver to 1 first, then 2, and so on.`;flash(t.stop,'warn')}
+    else if(t.end==='oneway'){text='Wrong way! That street is one-way. Turn it so the arrows point along your route.';flash(t.next,'warn')}
+    else{text=t.next!==null?'The road stops here! Turn the next tile so the route keeps going.':'This road runs off the edge of town.';flash(t.next!==null?t.next:t.stop,'warn')}
+    say(text,'bad');
+    setTimeout(()=>{pm.hidden=true;state.busy=false;if(state.limit&&state.moves>=state.limit)outOfMoves()},1000);
+  },t.seq.length*step+250);
+}
+
+function win(){
+  state.won=true;state.busy=false;Native.haptic('success');const id=state.id,lv=state.lvl,s=stat(id);
+  const stars=state.hints===0&&state.moves<=lv.minMoves?3:state.hints===0&&state.moves<=Math.ceil(lv.minMoves*1.5)?2:1;
+  const earned=[];
+  if(id==='daily'){if(save.dailyDone!==today()){earned.push(['Daily route',25]);save.dailyDone=today();
+    const n=streakNow()+1;save.streak={n,last:today()};if(n>1)earned.push([`${n}-day streak bonus`,Math.min(25,(n-1)*5)])}}
+  else{const rec=save.done[id];
+    if(!rec)earned.push(['Level complete',10]);
+    if(stars===3&&!(rec&&rec.bonus))earned.push(['Shortest route bonus',10]);
+    save.done[id]={best:rec?Math.min(rec.best,state.moves):state.moves,bonus:!!(rec&&rec.bonus)||stars===3,stars:Math.max(rec?(rec.stars||(rec.bonus?3:1)):0,stars)};
+    save.unlocked=Math.max(save.unlocked,id+1);}
+  if(s.time===null)s.time=Math.round((Date.now()-state.startT)/1000);
+  s.quitMoves=null;
+  const total=earned.reduce((a,e)=>a+e[1],0);save.points+=total;
+  let card='';
+  let prog='';
+  if(id!=='daily'){const h=hoodOf(id),dn=h.levels.filter(l=>save.done[l]).length;
+    if(h.levels[4]===id&&dn===5)card=`<div class="card" style="max-width:200px;margin:4px auto 0;text-align:left"><div class="pic">${sceneFor(h.i)}</div><h3>Postcard: ${h.name}</h3></div>`;
+    else prog=`<div class="hoodprog"><div class="progress"><span>${h.name}</span><span class="muted" style="margin-left:auto">${dn}/5</span></div><div class="bar"><i style="width:${dn*20}%;background:linear-gradient(90deg,#7BD389,var(--green))"></i></div><span class="muted" style="font-size:12.5px">${dn===5?'Neighborhood complete!':`${5-dn} more ${5-dn>1?'levels':'level'} to earn the postcard`}</span></div>`}
+  else{const n=streakNow();prog=`<div class="hoodprog" style="align-items:center;text-align:center"><span style="font-size:28px;line-height:1">🔥</span><b style="font-family:var(--display);font-weight:400;font-size:22px">${n}-day streak</b><span class="muted" style="font-size:12.5px">Come back tomorrow to keep it going.</span></div>`}
+  save.sinceAd++;persist();updateBoard();bumpCoins();
+  say(stars===3?'Perfect delivery on the shortest route!':'Delivered! Every letter arrived.','good');
+  const rows=earned.map(e=>`<div><span>${e[0]}</span><span class="plus">+${e[1]}</span></div>`).join('')||'<div><span class="muted">Already completed, no new coins</span><span></span></div>';
+  const tip=stars<3&&id!=='daily'?`<p class="muted" style="font-size:13.5px">Finish in ${lv.minMoves} moves without hints for 3 stars and +10 coins.</p>`:'';
+  const hasNext=id!=='daily';
+  sheet(`<div class="stars">${STAR(stars>=1)}${STAR(stars>=2)}${STAR(stars>=3)}</div><h2>Delivered!</h2><p class="muted">${state.moves} moves · best route ${lv.minMoves}</p>
+    <div class="earn">${rows}<div class="tot"><span>Your coins</span><span>${save.points}</span></div></div>${tip}${card}${prog}
+    <div class="row">${hasNext?'<button class="gb red" type="button" data-act="next">Next</button>':''}<button class="gb white" type="button" data-act="map">Map</button></div>`,
+    {next:()=>afterWin(()=>loadLevel(id+1)),map:()=>afterWin(()=>{state.view='map';render()})},true);
+  confetti();SFX.win(stars,total>0,!!card);
+}
+function afterWin(go){if(save.sinceAd>=3&&Date.now()-save.lastAdAt>=120000){save.sinceAd=0;save.lastAdAt=Date.now();persist();interstitial(go)}else go()}
+function confetti(){if(RM())return;const sc=OV.firstChild;if(!sc)return;const cols=['#E5483B','#FFC93C','#3C8CE7','#3FB861','#FF8FB1','#fff'];
+  for(let k=0;k<60;k++){const d=document.createElement('i');d.className='cf';d.style.left=Math.random()*100+'%';d.style.background=cols[k%cols.length];
+    d.style.animationDuration=(1.6+Math.random()*1.6)+'s';d.style.animationDelay=(Math.random()*.5)+'s';d.style.transform=`rotate(${Math.random()*360}deg)`;sc.appendChild(d);setTimeout(()=>d.remove(),4000)}}
+
+// ---------- sheets & ads ----------
+const OV=document.getElementById('overlay');
+const bigCoin=()=>COIN.replace('viewBox="0 0 28 28"','viewBox="-8 -2 44 32"');
+function sheet(html,acts,modal){
+  OV.innerHTML=`<div class="scrim"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;
+  const sc=OV.firstChild;
+  sc.addEventListener('click',e=>{
+    if(e.target===sc&&!modal){close();return}
+    const b=e.target.closest('button');if(!b||b.disabled)return;
+    if(b.hasAttribute('data-close')){close();return}
+    const a=b.dataset.act;if(a==='ad'){close();rewarded(acts&&acts.ad);return}
+    if(acts&&acts[a]){close();acts[a]()}
+  });
+  const f=sc.querySelector('button:not([disabled])');if(f)f.focus();
+}
+function close(){OV.innerHTML=''}
+function adButton(){const left=adsLeft();return left>0?`<button class="gb green wide" type="button" data-act="ad">${WEB?'🎁 Free bonus':'▶ Watch an ad'}<small>+50 coins · ${left} left today</small></button>`:`<button class="gb green wide" type="button" disabled>Ad limit reached<small>5 per day, back tomorrow</small></button>`}
+function outOfMoves(){SFX.outOfMoves();
+  const can=save.points>=50;
+  sheet(`<div class="hero"><svg viewBox="0 0 110 90">${'<ellipse cx="55" cy="82" rx="34" ry="6" fill="rgba(0,0,0,.12)"/>'}<g transform="translate(35 10) scale(1.6)">${POSTMAN.replace(/<\/?svg[^>]*>/g,'')}</g></svg></div>
+   <h2>Out of moves!</h2><p class="muted">You've used all ${state.limit} moves. Get 5 more, or restart. Restarting is always free.</p>
+   <button class="gb yellow wide" type="button" data-act="buy"${can?'':' disabled'}>+5 moves<small>50 coins · you have ${save.points}</small></button>
+   ${adButton()}<button class="gb white wide" type="button" data-act="restart">Restart level</button>`,
+   {buy:()=>{save.points-=50;state.limit+=5;stat(state.id).extra++;persist();updateBoard();bumpCoins();say('5 extra moves added. You can do it!','')},restart:restart,ad:()=>outOfMoves()},true);
+}
+// The public browser version has no ads: bonuses are free and ad breaks are skipped.
+const WEB=!Native.isNative&&!window.__PP_DEV__;
+function grantAd(){adsLeft();save.ads.count++;if(state.id!==null)stat(state.id).ads++;save.points+=50;persist();SFX.coins();if(state.view==='play'&&state.lvl){updateBoard();bumpCoins()}}
+function rewarded(then){
+  if(adsLeft()<=0)return;
+  if(!Native.isNative){webRewarded(then);return}
+  sheet(`<div class="eyebrow">Rewarded ad</div><h2 style="font-size:26px">Loading ad…</h2>`,{},true);
+  SFX.duck(true);Native.showRewarded().then(r=>{SFX.duck(false);close();
+    if(r===true){grantAd();if(then)then()}
+    else if(r===false)say('The ad closed early, so no coins this time.','');
+    else sheet(`<h2>No ad right now</h2><p class="muted">There isn\u2019t an ad ready at the moment. Try again in a minute, or restart the level for free.</p><button class="gb white wide" type="button" data-close>OK</button>`);});
+}
+function webRewarded(then){
+  if(WEB){grantAd();if(then)then();return}
+  let s=5;
+  OV.innerHTML=`<div class="scrim"><div class="sheet" role="dialog" aria-modal="true"><div class="eyebrow">Rewarded ad</div><div class="adbox"><h2 style="font-size:26px">Ad plays here</h2><p class="muted" style="font-size:13.5px">Prototype placeholder. In the real app this is an AdMob rewarded video the player chose to watch.</p><div class="bar"><i id="adbar"></i></div><p id="adt" style="font-family:var(--display);font-size:20px">${s}</p></div><button class="gb green wide" type="button" id="collect" disabled>Collect 50 coins</button></div></div>`;
+  requestAnimationFrame(()=>{const b=document.getElementById('adbar');if(b)b.style.width='20%'});
+  const tm=setInterval(()=>{s--;const t=document.getElementById('adt'),b=document.getElementById('adbar');if(!t){clearInterval(tm);return}
+    t.textContent=s>0?s:'Done!';b.style.width=Math.min(100,(5-s+1)*20)+'%';
+    if(s<=0){clearInterval(tm);const c=document.getElementById('collect');c.disabled=false;c.focus();
+      c.onclick=()=>{close();grantAd();if(then)then()}}},1000);
+}
+function interstitial(go){
+  if(Native.isNative){SFX.duck(true);Native.showInterstitial().then(()=>{SFX.duck(false);go()});return}
+  if(WEB){go();return}
+  let s=3;
+  OV.innerHTML=`<div class="scrim"><div class="sheet" role="dialog" aria-modal="true"><div class="eyebrow">Ad break</div><div class="adbox"><h2 style="font-size:26px">Interstitial slot</h2><p class="muted" style="font-size:13.5px">Prototype placeholder. Shows after every 3 completed levels, at most once every 2 minutes.</p><p id="it" style="font-family:var(--display);font-size:20px">${s}</p></div><button class="gb white wide" type="button" id="ic" disabled>Continue</button></div></div>`;
+  const tm=setInterval(()=>{s--;const t=document.getElementById('it');if(!t){clearInterval(tm);return}t.textContent=s>0?s:'';
+    if(s<=0){clearInterval(tm);const c=document.getElementById('ic');c.disabled=false;c.focus();c.onclick=()=>{close();go()}}},1000);
+}
+
+// ---------- map ----------
+const XS=[24,64,80,46,20];
+function renderMap(){
+  const dDone=save.dailyDone===today(),d=new Date(),cur=hoodOf(save.unlocked).i;
+  let html=`<div class="pagehead"><h1>Your Route</h1>${coins()}</div>
+  <div class="panel daily"><div class="cal"><i>${d.toLocaleDateString(undefined,{month:'short'}).toUpperCase()}</i><b>${d.getDate()}</b></div><div class="tx"><h2>Daily Route</h2><div class="muted" style="font-size:13.5px">${dDone?'Delivered today. New route tomorrow!':'A fresh puzzle every day · +25 coins'}</div>${streakNow()?`<span class="streak">🔥 ${streakNow()}-day streak${dDone?'':' · keep it going!'}</span>`:''}</div><button class="gb red" type="button" id="dly" style="font-size:18px;min-height:52px;padding-inline:18px">${dDone?'Replay':'Play'}</button></div>`;
+  for(let hi=0;hi<=cur+1;hi++){const h=hood(hi);
+    const done=h.levels.filter(l=>save.done[l]).length,stars=h.levels.reduce((a,l)=>a+starsOf(l),0);
+    const pts=h.levels.map((l,k)=>[XS[k],46+k*84]);
+    let p=`M${pts[0][0]} ${pts[0][1]}`;for(let k=1;k<5;k++)p+=` C${pts[k-1][0]} ${pts[k-1][1]+42} ${pts[k][0]} ${pts[k][1]-42} ${pts[k][0]} ${pts[k][1]}`;
+    html+=`<section class="hood"><div class="banner">${sceneFor(hi).replace('<svg ','<svg preserveAspectRatio="xMidYMid slice" ')}<div class="lab"><h2>${h.name}</h2><span class="pill">★ ${stars}/15 · ${done}/5</span></div></div>
+     <div class="trail"><svg class="road" viewBox="0 0 100 440" preserveAspectRatio="none" aria-hidden="true"><path d="${p}" fill="none" stroke="#C9BEA2" stroke-width="30" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path d="${p}" fill="none" stroke="#5A616B" stroke-width="24" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path d="${p}" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="8 8" vector-effect="non-scaling-stroke"/></svg>`+
+     h.levels.map((l,k)=>{const dn=save.done[l],locked=l>save.unlocked,nx=l===save.unlocked&&!dn;const st=starsOf(l);
+       return `<button class="node${dn?' done':''}${nx?' next':''}" type="button" data-l="${l}" style="left:${pts[k][0]}%;top:${pts[k][1]}px;${l>99?'font-size:19px':''}"${locked?` disabled aria-label="Level ${l}, locked">${ICON.lock}`:` aria-label="Level ${l}${dn?', '+st+' stars':''}">${l}`}</button>${dn?`<div class="nstars" style="left:${pts[k][0]}%;top:${pts[k][1]+34}px">${[1,2,3].map(x=>`<span class="${x<=st?'on':'off'}">★</span>`).join('')}</div>`:''}`}).join('')+`</div></section>`;
+  }
+  html+=`<div class="panel" style="text-align:center;padding:12px 16px"><b>The route never ends.</b><span class="muted" style="font-size:13.5px">A new neighborhood opens every 5 levels, and the streets keep getting trickier.</span></div>`;
+  V.innerHTML=html;
+  document.getElementById('dly').onclick=()=>loadLevel('daily');
+  V.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>loadLevel(+b.dataset.l));
+  requestAnimationFrame(()=>{const nx=V.querySelector('.node.next');if(nx&&cur>0)nx.scrollIntoView({block:'center'})});
+}
+
+// ---------- postcards ----------
+const SCENES=[
+ `<svg viewBox="0 0 150 100" aria-hidden="true"><defs><linearGradient id="s1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FCBF2"/><stop offset="1" stop-color="#D3F0FF"/></linearGradient></defs><rect width="150" height="100" fill="url(#s1)"/><circle cx="122" cy="22" r="11" fill="#FFD45C"/><ellipse cx="40" cy="20" rx="16" ry="5" fill="#fff" opacity=".85"/><path d="M0 70Q40 55 80 66T150 62V100H0Z" fill="#8CCB5B"/><g stroke="#3A2E2A" stroke-width="1.5" stroke-linejoin="round"><path d="M18 74V58L30 48L42 58V74Z" fill="#F7E3B5"/><path d="M52 76V56L66 45L80 56V76Z" fill="#FAD3CF"/><path d="M92 74V60L102 52L112 60V74Z" fill="#CFE9FA"/></g><path d="M16 59L30 47L44 59M50 57L66 43L82 57M90 61L102 51L114 61" fill="none" stroke="#E5483B" stroke-width="4" stroke-linecap="round"/><circle cx="132" cy="58" r="12" fill="#E8762E"/><circle cx="127" cy="54" r="5" fill="#F59A4E"/><rect x="130" y="66" width="4" height="12" fill="#6B4A2E"/><path d="M0 86H150" stroke="#E6DFCC" stroke-width="16"/><path d="M0 86H150" stroke="#545B66" stroke-width="11"/><path d="M4 86H146" stroke="#fff" stroke-width="1.5" stroke-dasharray="6 6"/></svg>`,
+ `<svg viewBox="0 0 150 100" aria-hidden="true"><defs><linearGradient id="s2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9AD8F5"/><stop offset="1" stop-color="#E3F6FF"/></linearGradient></defs><rect width="150" height="100" fill="url(#s2)"/><rect y="58" width="150" height="42" fill="#3E9BD3"/><path d="M10 70q6-4 12 0t12 0M90 82q6-4 12 0t12 0M50 92q6-4 12 0" stroke="#A8DEF5" stroke-width="2" fill="none"/><path d="M20 58Q75 18 130 58" fill="none" stroke="#C18E5A" stroke-width="7"/><path d="M40 47V58M60 39V58M75 37V58M90 39V58M110 47V58" stroke="#7A4B2A" stroke-width="2"/><path d="M28 74H54L50 82H32Z" fill="#E5483B"/><path d="M41 74V60L52 72Z" fill="#fff"/><path d="M98 86H118L115 92H101Z" fill="#FFC93C"/><path d="M108 86V76L115 84Z" fill="#fff"/><circle cx="128" cy="20" r="9" fill="#FFD45C"/><path d="M102 22l5 3 5-3M84 14l4 2 4-2" stroke="#1F2B45" stroke-width="1.5" fill="none"/></svg>`,
+ `<svg viewBox="0 0 150 100" aria-hidden="true"><defs><linearGradient id="s3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F7B58A"/><stop offset="1" stop-color="#FBE2C4"/></linearGradient></defs><rect width="150" height="100" fill="url(#s3)"/><circle cx="30" cy="26" r="12" fill="#FFE7A6"/><rect x="64" y="18" width="22" height="62" fill="#C0694C" stroke="#3A2E2A" stroke-width="1.5"/><path d="M60 20L75 4L90 20Z" fill="#2F6FB5" stroke="#3A2E2A" stroke-width="1.5"/><circle cx="75" cy="34" r="7" fill="#FFF8EC" stroke="#3A2E2A" stroke-width="1.5"/><path d="M75 34V29M75 34L79 36" stroke="#3A2E2A" stroke-width="1.5"/><g stroke="#3A2E2A" stroke-width="1.5"><rect x="8" y="52" width="26" height="30" fill="#E8B57E"/><rect x="34" y="46" width="28" height="36" fill="#D98C5F"/><rect x="88" y="48" width="26" height="34" fill="#F0C995"/><rect x="114" y="54" width="30" height="28" fill="#C97A52"/></g><g fill="#FFE7A6"><rect x="14" y="60" width="5" height="7"/><rect x="40" y="56" width="5" height="7"/><rect x="50" y="56" width="5" height="7"/><rect x="94" y="56" width="5" height="7"/><rect x="122" y="62" width="5" height="7"/></g><rect y="82" width="150" height="18" fill="#9A9089"/><path d="M0 90H150" stroke="#7E756E" stroke-width="1" stroke-dasharray="4 3"/></svg>`,
+ `<svg viewBox="0 0 150 100" aria-hidden="true"><defs><linearGradient id="s4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8ED0F2"/><stop offset="1" stop-color="#E6F7FF"/></linearGradient></defs><rect width="150" height="100" fill="url(#s4)"/><ellipse cx="34" cy="22" rx="18" ry="5" fill="#fff" opacity=".9"/><path d="M0 60Q35 30 75 52T150 40V100H0Z" fill="#A3D96E"/><path d="M0 80Q50 60 100 74T150 70V100H0Z" fill="#6FB24E"/><rect x="104" y="28" width="10" height="22" fill="#FFF8EC" stroke="#3A2E2A" stroke-width="1.5"/><g transform="translate(109 28)" stroke="#E5483B" stroke-width="3" stroke-linecap="round"><path d="M0 0L-14 -10M0 0L14 -10M0 0L-10 14M0 0L10 14"/></g><circle cx="109" cy="28" r="2.5" fill="#3A2E2A"/><path d="M14 92Q50 70 76 82T140 66" fill="none" stroke="#545B66" stroke-width="6" stroke-linecap="round"/><path d="M28 56V46L36 40L44 46V56Z" fill="#F7E3B5" stroke="#3A2E2A" stroke-width="1.5"/><path d="M26 47L36 39L46 47" fill="none" stroke="#2F6FB5" stroke-width="3" stroke-linecap="round"/></svg>`];
+const THEMES=[null,null,null,null,
+ {sky:['#9AD8F5','#FFE3EE'],g:['#A8DC7A','#86C25A'],roof:['#E85D8A','#F28AB0','#C84B7A'],mark:'blossom'},
+ {sky:['#34477F','#F3A86B'],g:['#6FA05A','#557F45'],roof:['#E5483B','#FFC93C','#3C8CE7'],mark:'lanterns',moon:1},
+ {sky:['#8ECFF0','#DFF4FF'],g:['#7FBF5E','#4E8F3C'],roof:['#7A4B2A','#B5543E','#2F6FB5'],mark:'pines'},
+ {sky:['#7FD3F5','#E8F9FF'],g:['#F2DDA4','#E6C987'],roof:['#2F9FD0','#E5483B','#FFC93C'],mark:'beach',sea:1},
+ {sky:['#8BD3F7','#E9F8FF'],g:['#7ACB5A','#5DB043'],roof:['#2E8B57','#E5483B','#FFC93C'],mark:'clover'},
+ {sky:['#9AD8F5','#FFF3D6'],g:['#D3CCB9','#B5AE9C'],roof:['#E5483B','#3C8CE7','#3FB861'],mark:'market'},
+ {sky:['#A9D8F0','#F1FAFF'],g:['#FFFFFF','#E3EEF6'],roof:['#E5483B','#2F6FB5','#8E3BA8'],mark:'mountain'},
+ {sky:['#F6C27A','#FFF0D0'],g:['#C9B25A','#A88F3E'],roof:['#C0592B','#8E3B2A','#D9822B'],mark:'orchard'},
+ {sky:['#7FC6EE','#E3F6FF'],g:['#E9D9A6','#D7C28A'],roof:['#2F6FB5','#E5483B','#3FB861'],mark:'lighthouse',sea:1},
+ {sky:['#9AD8F5','#EAF8FF'],g:['#9BD46B','#7FC152'],roof:['#E5483B','#FFC93C','#FF8FB1'],mark:'windmill'},
+ {sky:['#9CCFEA','#EEF7FC'],g:['#B9B3A6','#9E988B'],roof:['#B5543E','#2F6FB5','#D46A1E'],mark:'boat',sea:1},
+ {sky:['#F28A5B','#FFD39A'],g:['#9C7A4A','#7E6038'],roof:['#5A3E8C','#C0392B','#2C3E70'],mark:'sunset'},
+ {sky:['#8FD0F2','#FFF1D6'],g:['#EBC98A','#D9AE66'],roof:['#2E8B57','#D46A1E','#3C8CE7'],mark:'cactus'},
+ {sky:['#8ED6FA','#F2FBFF'],g:['#9BD46B','#7FC152'],roof:['#E5483B','#FFC93C','#3C8CE7'],mark:'rainbow'},
+ {sky:['#B7C7D3','#E8EEF2'],g:['#7E9C78','#647F60'],roof:['#5B6884','#8E3BA8','#2E8B57'],mark:'mist'},
+ {sky:['#F3B562','#FFE6B0'],g:['#C9B48A','#B39C70'],roof:['#E5483B','#2F6FB5','#FFC93C'],mark:'docks',sea:1}];
+const ST='stroke="#3A2E2A" stroke-width="1.5"';
+const tree=(x,y,r,c)=>`<rect x="${x-2}" y="${y}" width="4" height="${r+6}" fill="#7A4B2A"/><circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/><circle cx="${x-r*.35}" cy="${y-r*.35}" r="${r*.35}" fill="rgba(255,255,255,.25)"/>`;
+function farMark(m){switch(m){
+ case 'pines':return [10,34,58,96,120,140].map((x,i)=>`<path d="M${x} ${40+i%2*6}l9 22h-18z" fill="#3E7A3A"/><path d="M${x} ${32+i%2*6}l7 16h-14z" fill="#4E8F3C"/>`).join('');
+ case 'mountain':return `<path d="M-10 70L35 18L80 70Z" fill="#9FB6C9"/><path d="M35 18L47 32L40 30L33 36L26 31Z" fill="#fff"/><path d="M60 70L105 12L150 70Z" fill="#B4C8D8"/><path d="M105 12L119 30L110 27L103 34L95 28Z" fill="#fff"/>`;
+ case 'sunset':return `<circle cx="75" cy="62" r="26" fill="#FFE07A" opacity=".95"/>`;
+ case 'rainbow':return ['#E5483B','#FF9A3C','#FFD43B','#3FB861','#3C8CE7','#8E3BA8'].map((c,i)=>`<path d="M${20+i*4} 70A${55-i*4} ${48-i*4} 0 0 1 ${130-i*4} 70" fill="none" stroke="${c}" stroke-width="4"/>`).join('');
+ case 'lanterns':return `<path d="M0 22Q75 44 150 22" fill="none" stroke="#3A2E2A" stroke-width="1"/>`+[18,42,66,90,114,136].map((x,i)=>{const y=22+Math.sin(x/150*Math.PI)*21;return `<ellipse cx="${x}" cy="${y+5}" rx="5" ry="6.5" fill="${['#E5483B','#FFC93C','#FF8A2B'][i%3]}"/><ellipse cx="${x}" cy="${y+5}" rx="2.5" ry="4" fill="#FFF3B0" opacity=".7"/>`}).join('');
+ case 'lighthouse':return `<path d="M126 60L130 20H140L144 60Z" fill="#fff" ${ST}/><path d="M128.6 34H141.4L142.2 42H127.8Z M127.2 50H142.8L143.6 58H126.4Z" fill="#E5483B"/><rect x="128" y="13" width="14" height="8" fill="#FFE066" ${ST}/><path d="M126 13L135 6L144 13Z" fill="#E5483B" ${ST}/>`;
+ case 'windmill':return `<rect x="122" y="30" width="12" height="30" fill="#FFF8EC" ${ST}/><g transform="translate(128 30)" stroke="#E5483B" stroke-width="3.5" stroke-linecap="round"><path d="M0 0L-15 -11M0 0L15 -11M0 0L-11 15M0 0L11 15"/></g><circle cx="128" cy="30" r="2.5" fill="#3A2E2A"/>`;
+ case 'docks':return `<path d="M118 60V22H142" fill="none" stroke="#E5483B" stroke-width="3"/><path d="M118 26L134 22M138 22V34" stroke="#3A2E2A" stroke-width="1.5" fill="none"/><rect x="133" y="34" width="10" height="7" fill="#3C8CE7"/><path d="M8 60H40L36 66H12Z" fill="#2F6FB5"/><rect x="14" y="52" width="8" height="8" fill="#FFC93C"/><rect x="23" y="52" width="8" height="8" fill="#E5483B"/>`;
+ default:return ''}}
+function nearMark(m){switch(m){
+ case 'blossom':return tree(132,56,12,'#F59BBE')+tree(10,62,8,'#F7B6CF');
+ case 'orchard':return tree(132,56,12,'#5DA640')+[[127,52],[136,58],[131,62],[138,50]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.2" fill="#E5483B"/>`).join('');
+ case 'clover':return tree(133,55,13,'#3FA046')+[20,46,86,110].map(x=>`<g fill="#2E8B57"><circle cx="${x}" cy="80" r="2.2"/><circle cx="${x+3}" cy="80" r="2.2"/><circle cx="${x+1.5}" cy="77.5" r="2.2"/></g>`).join('');
+ case 'beach':return `<path d="M132 76V50" stroke="#7A4B2A" stroke-width="2"/><path d="M118 52Q132 36 146 52Z" fill="#E5483B"/><path d="M125 52Q132 40 139 52Z" fill="#fff"/>`;
+ case 'market':return `<rect x="120" y="58" width="26" height="16" fill="#F4EFE6" ${ST}/><path d="M118 52H148L146 60H120Z" fill="#fff" ${ST}/><path d="M122 52l-2 8M130 52v8M138 52l1 8M146 52l0 8" stroke="#E5483B" stroke-width="4"/><circle cx="126" cy="66" r="2.5" fill="#FF8A2B"/><circle cx="133" cy="66" r="2.5" fill="#3FB861"/><circle cx="140" cy="66" r="2.5" fill="#E5483B"/>`;
+ case 'cactus':return `<path d="M132 76V46a4 4 0 0 1 8 0v30Z" fill="#3E9B4A"/><path d="M132 60h-6v-8a3 3 0 0 1 6 0" fill="none" stroke="#3E9B4A" stroke-width="5"/><path d="M140 56h5v-6" fill="none" stroke="#3E9B4A" stroke-width="5" stroke-linecap="round"/><path d="M12 76v-14a3 3 0 0 1 6 0v14z" fill="#4FAF57"/>`;
+ case 'boat':return `<path d="M118 66H146L142 72H122Z" fill="#E5483B"/><path d="M132 66V50L141 64Z" fill="#fff"/>`;
+ case 'mist':return tree(134,54,12,'#4E7A50')+`<ellipse cx="40" cy="70" rx="60" ry="7" fill="#fff" opacity=".55"/><ellipse cx="120" cy="78" rx="50" ry="6" fill="#fff" opacity=".5"/>`;
+ case 'pines':case 'mountain':return tree(134,56,11,'#3E7A3A');
+ default:return ''}}
+function sceneFor(hi){
+  const t=hi%HOOD_NAMES.length;if(t<4)return SCENES[t];
+  const T=THEMES[t],id='sg'+hi,w=['#F7EEDC','#FFF8EC','#F2E3CF'];
+  const houses=[[18,74,42,58,30,48],[52,76,80,56,66,45],[92,74,112,60,102,52]].map(([x1,yb,x2,yt,xm,yr],i)=>`<path d="M${x1} ${yb}V${yt}L${xm} ${yr}L${x2} ${yt}V${yb}Z" fill="${w[i]}" ${ST} stroke-linejoin="round"/><path d="M${x1-2} ${yt+1}L${xm} ${yr-1}L${x2+2} ${yt+1}" fill="none" stroke="${T.roof[i]}" stroke-width="4" stroke-linecap="round"/><rect x="${xm-3}" y="${yb-9}" width="6" height="9" fill="#7A4B2A"/><rect x="${x1+4}" y="${yt+4}" width="5" height="5" fill="#CFEFFF" stroke="#3A2E2A" stroke-width=".8"/>`).join('');
+  return `<svg viewBox="0 0 150 100" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${T.sky[0]}"/><stop offset="1" stop-color="${T.sky[1]}"/></linearGradient></defs><rect width="150" height="100" fill="url(#${id})"/>
+   ${T.moon?'<circle cx="124" cy="18" r="8" fill="#FFF3C4"/><circle cx="128" cy="15" r="7" fill="'+T.sky[0]+'"/>':T.mark==='sunset'?'':'<circle cx="124" cy="20" r="10" fill="#FFD45C"/>'}
+   ${T.sea?'<rect y="50" width="150" height="20" fill="#3E9BD3"/><path d="M10 58q5-3 10 0t10 0M80 62q5-3 10 0t10 0" stroke="#A8DEF5" stroke-width="1.5" fill="none"/>':''}
+   ${farMark(T.mark)}<path d="M0 70Q40 55 80 66T150 62V100H0Z" fill="${T.g[0]}"/><path d="M0 84Q60 74 150 82V100H0Z" fill="${T.g[1]}"/>${houses}${nearMark(T.mark)}
+   <path d="M0 88H150" stroke="#E6DFCC" stroke-width="12"/><path d="M0 88H150" stroke="#545B66" stroke-width="8"/><path d="M4 88H146" stroke="#fff" stroke-width="1.2" stroke-dasharray="5 5"/></svg>`;
+}
+function renderCards(){
+  const cur=hoodOf(save.unlocked).i,list=[];for(let hi=0;hi<=cur;hi++)list.push(hood(hi));
+  const got=list.filter(h=>h.levels.every(l=>save.done[l])).length;
+  V.innerHTML=`<div class="pagehead"><h1>Postcards</h1><span class="coins" style="padding-left:6px">${STAR(true)}${totalStars()}</span></div>
+  <div class="panel" style="padding:14px 16px;gap:8px"><div class="progress"><span>Your collection</span><span class="muted" style="margin-left:auto">${got} of ${list.length}</span></div><div class="bar"><i style="width:${Math.round(got/list.length*100)}%;background:linear-gradient(90deg,#7BD389,var(--green))"></i></div><p style="margin:0;font-size:13.5px" class="muted">Finish every level in a neighborhood and its postcard arrives in your mailbox. There's always another one on the way.</p></div>
+  <div class="cards">${list.map(h=>{const ok=h.levels.every(l=>save.done[l]);const d=h.levels.filter(l=>save.done[l]).length;
+    return `<div class="card${ok?'':' locked'}"><div class="pic">${sceneFor(h.i)}<div class="stampc">${ok?'★':'?'}</div>${ok?'':`<div class="lock">${ICON.lockdark}</div>`}</div><h3>${h.name}</h3><p>${ok?h.card:`${d}/5 levels delivered`}</p></div>`}).join('')}</div>`;
+}
+
+// ---------- playtest ----------
+function fmtT(s){if(s===null||s===undefined)return '—';return s>=60?Math.floor(s/60)+'m '+String(s%60).padStart(2,'0')+'s':s+'s'}
+const playedLevels=()=>Object.keys(save.stats).filter(k=>k!=='daily').map(Number).sort((a,b)=>a-b);
+function summary(){
+  const d=save.days.slice().sort();let ret='no';
+  for(let i=1;i<d.length;i++){if((new Date(d[i])-new Date(d[i-1]))/86400000===1){ret='yes';break}}
+  const lines=[`Pocket Postman playtest — exported ${new Date().toLocaleString()}`,`Levels completed: ${Object.keys(save.done).length} (highest unlocked: ${save.unlocked})`,`Days played: ${d.join(', ')}`,`Came back the next day: ${ret}`,`Coins: ${save.points}`,'','level,plays,taps,failed_delivers,hints,extra_moves,ads,first_clear_time_s,stars,left_mid_level_after_moves'];
+  for(const l of playedLevels()){const s=save.stats[l];lines.push([l,s.plays,s.taps,s.fails,s.hints,s.extra,s.ads,s.time??'',starsOf(l),s.quitMoves??''].join(','))}
+  if(save.stats.daily){const s=save.stats.daily;lines.push(['daily',s.plays,s.taps,s.fails,s.hints,s.extra,s.ads,s.time??'',save.dailyDone?'done':'',s.quitMoves??''].join(','))}
+  return {text:lines.join('\n'),ret,days:d.length};
+}
+function renderTest(){
+  const sm=summary();const done=Object.keys(save.done).length;
+  let rows='';for(const l of playedLevels()){const s=save.stats[l];const st=starsOf(l);
+    rows+=`<tr><td>${l}</td><td style="color:var(--gold)">${st?'★'.repeat(st):'—'}</td><td>${fmtT(s.time)}</td><td>${s.taps} / ${getLevel(l).minMoves}</td><td>${s.fails}</td><td>${s.hints}</td><td>${s.extra}</td><td>${s.ads}</td></tr>`}
+  V.innerHTML=`<div class="pagehead"><h1>Playtest</h1></div>
+  <div class="kpis"><div class="kpi"><b>${done}</b><span>levels done</span></div><div class="kpi"><b>${sm.days}</b><span>days played</span></div><div class="kpi"><b>${sm.ret==='yes'?'Yes':'Not yet'}</b><span>came back next day</span></div></div>
+  <div class="panel"><h2>Per level</h2>${rows?`<div class="tablewrap"><table><thead><tr><th>Lvl</th><th>Stars</th><th>Time</th><th>Taps / best</th><th>Fails</th><th>Hints</th><th>+Moves</th><th>Ads</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="muted" style="margin:0">Nothing yet. Stats appear here as levels are played.</p>'}
+  <p class="muted" style="margin:0;font-size:13px">Stats are saved in this browser only. Ask each tester to tap Copy results and send them to you.</p></div>
+  <div class="panel"><h2>Jump to level</h2><p class="muted" style="margin:0;font-size:13.5px">For testing: opens any level and unlocks everything before it.</p>
+   <div class="row" style="align-items:stretch"><input id="jump" type="number" inputmode="numeric" min="1" value="21" aria-label="Level number" style="font:inherit;font-family:var(--display);font-size:24px;text-align:center;border:2px solid var(--line);border-radius:14px;padding:8px;min-width:0;background:var(--card2);color:var(--ink)"><button class="gb green" type="button" id="go2">Play level</button></div>
+   <div class="row">${[21,30,49,100].map(n=>`<button class="gb white" type="button" data-j="${n}" style="min-height:44px;font-size:16px">${n}</button>`).join('')}</div></div>
+  <div class="row"><button class="gb red" type="button" id="copy">Copy results</button><button class="gb white" type="button" id="wipe">Reset progress</button></div>
+  <div id="copyout"></div>`;
+  const jump=n=>{n=Math.max(1,Math.floor(+n||1));save.unlocked=Math.max(save.unlocked,n);persist();loadLevel(n)};
+  document.getElementById('go2').onclick=()=>jump(document.getElementById('jump').value);
+  V.querySelectorAll('[data-j]').forEach(x=>x.onclick=()=>jump(x.dataset.j));
+  document.getElementById('copy').onclick=()=>{const t=summary().text;const fb=()=>{document.getElementById('copyout').innerHTML='<div class="panel"><p class="muted" style="margin:0">Copy this text manually:</p><textarea id="ta" readonly></textarea></div>';const ta=document.getElementById('ta');ta.value=t;ta.select()};
+    try{navigator.clipboard.writeText(t).then(()=>{document.getElementById('copy').firstChild.textContent='Copied!'},fb)}catch(e){fb()}};
+  const w=document.getElementById('wipe');let armed=false;
+  w.onclick=()=>{if(!armed){armed=true;w.textContent='Tap again';setTimeout(()=>{armed=false;if(w.isConnected)w.textContent='Reset progress'},4000);return}
+    save=blank();save.days=[today()];persist();state.lvl=null;state.id=null;renderTest()};
+}
+
+// ---------- settings ----------
+function renderSettings(){
+  const C=window.PP_CONFIG;let hap='on';try{hap=localStorage.getItem('pp-haptics')==='off'?'off':'on'}catch(e){}
+  const row=(ic,bg,title,sub,ctl)=>`<div class="setrow"><span class="seti"><i style="background:${bg}">${ic}</i><span><b>${title}</b>${sub?`<br><span class="muted" style="font-size:13px">${sub}</span>`:''}</span></span>${ctl}</div>`;
+  const tog=(id,on,label)=>`<button class="switch" type="button" role="switch" id="${id}" aria-checked="${on}" aria-label="${label}"></button>`;
+  V.innerHTML=`<div class="pagehead"><h1>Settings</h1>${coins()}</div>
+  <div class="sect">Your progress</div>
+  <div class="panel"><div class="statsgrid"><div><b>${Object.keys(save.done).length}</b><span>Levels</span></div><div><b>${totalStars()}</b><span>Stars</span></div><div><b>${streakNow()}</b><span>Streak</span></div><div><b>${save.points}</b><span>Coins</span></div></div></div>
+  <div class="sect">Sound</div>
+  <div class="panel">
+    ${row('🎵','#E6F1FD','Music','Background tune',tog('mus',SFX.music,'Music'))}
+    ${row('🔔','#FFF4D6','Sound effects','Clicks, bells and fanfares',tog('sfx',SFX.sfx,'Sound effects'))}
+    ${row('📳','#EFE8FD','Vibration','A light tap when roads turn',tog('hap',hap==='on','Vibration'))}
+  </div>
+  <div class="sect">Play your way</div>
+  <div class="panel">
+    ${row('🌿','#E3F7E8','Relaxed mode','No move limits. Take all the time you need',tog('rlx',pref('relaxed'),'Relaxed mode'))}
+    ${row('🔎','#E6F1FD','Larger text','Easier to read tips and labels',tog('big',pref('big'),'Larger text'))}
+    ${row('🍃','#FFF1DC','Calm motion','Fewer animations and effects',tog('calm',pref('calm'),'Calm motion'))}
+  </div>
+  <div class="sect">Privacy</div>
+  <div class="panel">
+    ${Native.ads.privacyRequired?row('🛡️','#E6F1FD','Privacy choices','Change your ad consent','<button class="gb white" type="button" id="priv" style="min-height:44px;font-size:15px">Open</button>'):''}
+    ${row('📄','#EFF5FB','Privacy policy','What the game stores and shares','<button class="gb white" type="button" id="pol" style="min-height:44px;font-size:15px">Read</button>')}
+    ${row('🗑️','#FFE9E6','Reset progress','Erases levels, stars and coins on this device','<button class="gb white" type="button" id="wipe2" style="min-height:44px;font-size:15px">Reset</button>')}
+  </div>
+  <p class="muted" style="text-align:center;margin:0;font-size:13px">Pocket Postman ${C.version}</p>`;
+  const sw=(id,get,set)=>{const e=document.getElementById(id);e.onclick=()=>{const on=e.getAttribute('aria-checked')!=='true';e.setAttribute('aria-checked',on);set(on);if(on){SFX.unlock();SFX.click()}}};
+  sw('mus',()=>SFX.music,v=>SFX.setMusic(v));sw('sfx',()=>SFX.sfx,v=>SFX.setSfx(v));
+  sw('big',null,v=>setPref('big',v));sw('calm',null,v=>setPref('calm',v));
+  // Relaxed mode also applies to the level in progress.
+  sw('rlx',null,v=>{setPref('relaxed',v);if(state.lvl&&!state.won)state.limit=v?null:state.base.limit});
+  const h=document.getElementById('hap');h.onclick=()=>{const on=h.getAttribute('aria-checked')!=='true';h.setAttribute('aria-checked',on);try{localStorage.setItem('pp-haptics',on?'on':'off')}catch(e){}if(on)Native.haptic('medium')};
+  const pv=document.getElementById('priv');if(pv)pv.onclick=()=>Native.privacyOptions();
+  document.getElementById('pol').onclick=policy;
+  const w=document.getElementById('wipe2');let armed=false;
+  w.onclick=()=>{if(!armed){armed=true;w.textContent='Tap again';setTimeout(()=>{armed=false;if(w.isConnected)w.textContent='Reset'},4000);return}
+    save=blank();save.days=[today()];persist();state.lvl=null;state.id=null;renderSettings()};
+}
+
+// Full privacy policy inside the app, so it reads offline. Keep in step with privacy/index.html.
+function policy(){
+  sheet(`<h2 style="font-size:28px">Privacy policy</h2>
+  <div class="policy">
+   <p class="muted">Last updated: November 6, 2026</p>
+   <p>Pocket Postman is made by <b>Alphoria Systems</b>. This explains what information is used when you play.</p>
+   <h3>What we collect</h3>
+   <p><b>We don't collect personal information ourselves.</b> There are no accounts, no sign-in, no chat and no in-app purchases. Your progress (levels, stars, coins and settings) is stored <b>only on this device</b> and is removed when you uninstall the game.</p>
+   <p>On first launch the game asks for your birth year. Only your <b>age group</b> (under 13, 13–15, or 16+) is kept on this device, to choose the right kind of ads. The birth year itself is not saved or sent anywhere.</p>
+   <h3>Ads (Google AdMob)</h3>
+   <p>The game is free and shows ads from Google AdMob. To show and measure ads, AdMob may collect your device's advertising ID (only where allowed), approximate location from your IP address, how you interact with ads, and crash and performance data. See policies.google.com/technologies/ads.</p>
+   <p><b>Children and teens:</b> players under 13 only see child-directed ads. Their advertising ID isn't used and ads aren't personalised. Players aged 13–15 don't get personalised ads either. All ads are limited to content suitable for general audiences.</p>
+   <h3>Your choices</h3>
+   <p>In the EEA, UK and some US states you're asked before personalised ads are shown, and you can change this in Settings → Privacy choices. On iPhone you can change tracking in iOS Settings → Privacy &amp; Security → Tracking. On Android you can reset or delete your advertising ID in device Settings.</p>
+   <h3>Keeping and deleting data</h3>
+   <p>We keep no data about you on our servers. Use Settings → Reset progress, or uninstall the game, to remove everything on this device.</p>
+   <h3>Children's privacy</h3>
+   <p>We don't knowingly collect personal information from children. The game is built to follow COPPA and the Google Play Families policy.</p>
+   <h3>Contact</h3>
+   <p>Questions? Email usama@alphoriasystems.com</p>
+  </div>
+  <button class="gb red wide" type="button" data-close>Done</button>`);
+}
+
+// ---------- back button ----------
+Native.onBack(()=>{
+  if(document.querySelector('.splash')){Native.exit();return}
+  const sc=OV.firstChild;if(sc){if(sc.querySelector('[data-close]'))close();return}
+  if(state.busy)return;
+  if(state.view!=='map'){state.view='map';render();return}
+  Native.exit();
+});
+
+// ---------- neutral age screen (Google Play Families / COPPA) ----------
+// Asked once, before any ad is requested. No default answer and no hint about what the answer changes.
+// Only the age group is stored, never the birth year.
+function askAge(done){
+  const C=window.PP_CONFIG;let have=null;try{have=localStorage.getItem('pp-age')}catch(e){}
+  if(!C.ageScreen||C.childDirected||have){done();return}
+  const y=new Date().getFullYear();let opts='<option value="" selected disabled>Select year</option>';
+  for(let k=y;k>=y-100;k--)opts+=`<option value="${k}">${k}</option>`;
+  sheet(`<h2>Welcome!</h2><p class="muted">What year were you born?</p>
+    <select id="by" aria-label="Birth year" style="font:inherit;font-family:var(--display);font-size:24px;text-align:center;padding:10px;border-radius:14px;border:2px solid var(--line);background:var(--card2);color:var(--ink)">${opts}</select>
+    <button class="gb red wide" type="button" data-act="ok" id="byok" disabled>Continue</button>`,{ok:()=>{
+      // Assume the birthday hasn't come yet this year, so an unclear age counts as the younger one.
+      const age=y-chosen-1;
+      const g=age<13?'child':age<16?'teen':'adult';try{localStorage.setItem('pp-age',g)}catch(e){}done()}},true);
+  let chosen=0;const sel=document.getElementById('by'),ok=document.getElementById('byok');
+  sel.onchange=()=>{chosen=+sel.value;ok.disabled=!chosen};
+}
+
+// ---------- splash ----------
+function splash(){
+  const el=document.createElement('div');el.className='splash';
+  const st=totalStars(),sk=streakNow();
+  el.innerHTML=`<div class="cloud" style="top:9%;animation-delay:-6s"></div><div class="cloud" style="top:20%;transform:scale(.7);animation-delay:-17s;animation-duration:34s"></div>
+   <svg class="hills" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60Q100 10 210 50T400 40V300H0Z" fill="#8FCB5F"/><path d="M0 120Q140 70 260 115T400 100V300H0Z" fill="#7BBE4F"/><path d="M0 190Q120 160 240 185T400 175V300H0Z" fill="#69AE42"/></svg>
+   <div class="logo">Pocket<span>Postman</span></div>
+   <svg class="scene" viewBox="0 0 320 150" aria-hidden="true"><path d="M0 118H320" stroke="#E6DFCC" stroke-width="40"/><path d="M0 118H320" stroke="#545B66" stroke-width="30"/><path d="M0 118H320" stroke="#fff" stroke-width="3" stroke-dasharray="12 10"/>
+    <g transform="translate(6 30) scale(1.45)">${PO.replace(/<\/?svg[^>]*>/g,'')}</g><g transform="translate(118 40) scale(1.3)">${houseSVG({order:2},false).replace(/<\/?svg[^>]*>/g,'')}</g>
+    <g class="vanbob"><g transform="translate(222 52) scale(1.5)">${VAN.replace(/<\/?svg[^>]*>/g,'')}</g></g><g transform="translate(176 78) scale(1.25)">${POSTMAN.replace(/<\/?svg[^>]*>/g,'')}</g></svg>
+   <button class="gb red" type="button" id="sp">${save.unlocked>1?'Continue · Level '+nextLevel():'Play'}</button>
+   <p style="margin:0;color:#1F4D17;font-weight:900">Turn the roads. Deliver the mail.</p>
+   ${save.unlocked>1?`<div class="chips"><span class="chip">${STAR(true)}${st} stars</span><span class="chip"><span class="em">🔥</span>${sk}-day streak</span><span class="chip">${COIN}${save.points}</span></div>`:''}
+   <div class="foot">Relaxing puzzles for every age · v${window.PP_CONFIG.version}</div>`;
+  document.body.appendChild(el);const b=el.querySelector('#sp');b.focus();b.onclick=()=>{SFX.unlock();el.remove();askAge(()=>Native.startAds())};
+}
+
+document.querySelector('[data-tab="test"]').hidden=!(window.PP_CONFIG.showPlaytest||window.__PP_DEV__);
+(async function boot(){
+  await Native.boot();
+  if(Native.isNative){let ls=null;try{ls=localStorage.getItem(KEY)}catch(e){}
+    if(!ls){const copy=await Native.loadCopy();if(copy){try{const v=JSON.parse(copy);if(v&&v.done)save=Object.assign(blank(),v)}catch(e){}}}}
+  if(!save.days.includes(today()))save.days.push(today());
+  persist();loadLevel(nextLevel());splash();
+})();
+</script>
+</body>
+</html>
