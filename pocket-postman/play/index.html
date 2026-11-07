@@ -617,9 +617,9 @@ const ICON={
  lockdark:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2.5" fill="#5B6884"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="#5B6884" stroke-width="2.6"/></svg>'};
 
 // ---------- sound & music (all generated live with Web Audio: no files, works offline) ----------
-// Music: a full arranged song (intro, verse, chorus, breakdown) played by synthesized instruments:
-// FM electric piano, a whistled melody, plucked bass, brushed drums and a warm pad, with reverb.
-// On menus it plays softly through a warm filter; during a level the drums and full sound come in.
+// Music: a calm arranged song (intro, verse, chorus, breakdown) played by synthesized instruments:
+// FM electric piano, a whistled melody, plucked bass, soft drums and a warm pad, with reverb.
+// On menus it plays softly through a warm filter; during a level light drums come in.
 const SFX=(()=>{
   let ctx=null,master,sfxBus,musicBus,musicTone,mRev,sRev,delay,noiseBuf,timer=null,ducked=false,mood='menu';
   const get=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:v==='1'}catch(e){return d}};
@@ -646,7 +646,7 @@ const SFX=(()=>{
     const ir=impulse(2.4,3.2);
     mRev=ctx.createConvolver();mRev.buffer=ir;const mw=ctx.createGain();mw.gain.value=.55;mRev.connect(mw);mw.connect(musicTone);
     sRev=ctx.createConvolver();sRev.buffer=ir;const sw=ctx.createGain();sw.gain.value=.5;sRev.connect(sw);sw.connect(sfxBus);
-    delay=ctx.createDelay(1);delay.delayTime.value=60/BPM*.75;const fb=ctx.createGain();fb.gain.value=.25;const dw=ctx.createGain();dw.gain.value=.22;
+    delay=ctx.createDelay(1);delay.delayTime.value=60/BPM*.75;const fb=ctx.createGain();fb.gain.value=.15;const dw=ctx.createGain();dw.gain.value=.22;
     delay.connect(fb);fb.connect(delay);delay.connect(dw);dw.connect(mRev);dw.connect(musicTone);
     noiseBuf=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
     return true;
@@ -683,7 +683,7 @@ const SFX=(()=>{
   }
   // Whistled melody: pure tone that scoops up into the note, with delayed vibrato and a breath of air.
   function whistle(f,t,d,v,pan=.12){
-    tone({f:f*.97,f2:f,type:'sine',t,d,v,a:.03,bus:'m',rev:.35,echo:.3,pan,vib:f*.012,vibDelay:Math.min(.25,d*.4)});
+    tone({f:f*.97,f2:f,type:'sine',t,d,v,a:.03,bus:'m',rev:.35,echo:.15,pan,vib:f*.012,vibDelay:Math.min(.25,d*.4)});
     tone({f:f*2,type:'sine',t,d:d*.6,v:v*.06,a:.03,bus:'m',pan});
     noise({t,d:Math.min(.12,d),v:v*.18,freq:f*2.2,q:3,type:'bandpass',bus:'m',pan});
   }
@@ -716,8 +716,8 @@ const SFX=(()=>{
   const glock=(f,t=0,v=.12,pan=0)=>{tone({f,t,d:.9,v,a:.002,pan,rev:.45});tone({f:f*3.01,t,d:.25,v:v*.3,a:.002,pan,rev:.45})};
   const PENTA=['C5','D5','E5','G5','A5','C6','D6','E6','G6','A6','C7'].map(N);
 
-  // ---------- the song: "Maple Lane" in C major, 100 BPM, swung eighths ----------
-  const BPM=100,EIGHTH=60/BPM/2,SWING=EIGHTH*.16;
+  // ---------- the song: "Maple Lane" in C major, 88 BPM, swung eighths ----------
+  const BPM=88,EIGHTH=60/BPM/2,SWING=EIGHTH*.16;
   const CH={C:['C3','E4','G4','B4'],Am:['A2','C4','E4','G4'],F:['F2','A3','C4','E4'],G:['G2','B3','D4','G4'],
             Em:['E2','B3','D4','G4'],Dm:['D3','C4','F4','A4'],G7:['G2','B3','F4','G4']};
   const C2={};for(const k in CH)C2[k]=CH[k].map(N);
@@ -735,32 +735,23 @@ const SFX=(()=>{
   add('brk',['F','G','Em','Am','Dm','G7','G7','G7']);
   let step=0,nextT=0;
   function bar(){const i=Math.floor(step/8);return SONG[i<SONG.length?i:LOOP+(i-SONG.length)%(SONG.length-LOOP)]}
+  // Kept deliberately sparse so it sits quietly behind the puzzle: one rolled piano chord per bar,
+  // a gentle two-note bass, the whistled tune only in the verses, and soft half-time drums in a level.
   function playStep(t){
     const s=step%8,b=bar(),ch=C2[b.c],root=ch[0],play=mood==='play';
-    const full=play&&b.sec!=='intro'&&b.sec!=='brk';
-    // electric piano comping: a held chord on the downbeat, syncopated stabs during a level
-    if(s===0)ch.slice(1).forEach((f,i)=>epiano(f,t+i*.012,b.sec==='brk'?.05:.07,play?.9:1.8,{pan:(i-1)*.2}));
-    if(play&&(s===3||s===6))ch.slice(1).forEach((f,i)=>epiano(f,t,.035,.35,{pan:(i-1)*.2,rev:.2}));
-    if(!play&&s===4)epiano(ch[3]*2,t,.03,1.2,{pan:.3,rev:.5});
-    // bass
+    if(s===0)ch.slice(1).forEach((f,i)=>epiano(f,t+i*.035,.05,2.4,{pan:(i-1)*.2,rev:.4}));
     if(b.sec!=='brk'){
-      if(s===0)bass(root,t,EIGHTH*2.6,play?.26:.18);
-      if(play&&s===3)bass(root,t,EIGHTH*.8,.16);
-      if(s===4)bass(root*1.5,t,EIGHTH*1.8,play?.2:.13);
-      if(play&&s===6)bass(root*2,t,EIGHTH*.8,.12);
+      if(s===0)bass(root,t,EIGHTH*3.5,play?.2:.15);
+      if(s===4)bass(root*1.5,t,EIGHTH*3,play?.12:.09);
     }
-    // warm pad underneath the chorus and the breakdown
-    if(s===0&&(b.sec==='B'||b.sec==='brk'))pad(ch.slice(1),t,EIGHTH*8.4,b.sec==='brk'?.028:.018);
-    // drums, only in the full sections of a level
-    if(full){
-      if(s===0||s===4||(s===5&&step%16>8))kick(t,s===5?.3:.5);
-      if(s===2||s===6)brush(t,.11);
-      hat(t,s%2?.05:.028,s===7&&step%32===31);
-    }else if(play&&b.sec==='brk'&&s%2===1)hat(t,.03);
-    if(!play&&s%2===1)noise({t,d:.04,v:.018,freq:7000,bus:'m',pan:.35});   // soft shaker on menus
-    // melody
-    if(b.mel){const n=b.mel[s];if(n!=='-'&&n!=='.'){let len=1;while(s+len<8&&b.mel[s+len]==='-')len++;
-      whistle(N(n),t,len*EIGHTH*.95+.08,play?.075:.055)}}
+    if(s===0&&(b.sec==='B'||b.sec==='brk'))pad(ch.slice(1),t,EIGHTH*8.4,.014);
+    if(play&&(b.sec==='A'||b.sec==='B')){
+      if(s===0)kick(t,.3);
+      if(s===4)brush(t,.06);
+      if(s===2||s===6)hat(t,.02);
+    }
+    if(b.sec==='A'&&b.mel){const n=b.mel[s];if(n!=='-'&&n!=='.'){let len=1;while(s+len<8&&b.mel[s+len]==='-')len++;
+      whistle(N(n),t,len*EIGHTH*.95+.08,play?.06:.045)}}
   }
   function schedule(){
     while(nextT<ctx.currentTime+.15){const t=nextT-ctx.currentTime+(step%2?SWING:0);playStep(Math.max(0,t));nextT+=EIGHTH;step++}
