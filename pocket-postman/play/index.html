@@ -303,6 +303,8 @@ body.big .policy{font-size:17px}
   <button data-tab="settings"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4l2.6 2.8 3.8-.6.8 3.7 3.4 1.8-1.4 3.6 1.4 3.6-3.4 1.8-.8 3.7-3.8-.6L16 28l-2.6-2.8-3.8.6-.8-3.7-3.4-1.8 1.4-3.6-1.4-3.6 3.4-1.8.8-3.7 3.8.6z" fill="#8A97AD"/><circle cx="16" cy="16" r="4.5" fill="#fff"/></svg>Settings</button>
 </nav></div>
 <div id="overlay"></div>
+<!-- Capacitor core (copied from node_modules/@capacitor/core/dist/capacitor.js): provides registerPlugin, which native.js needs to reach AdMob, splash, saves and haptics. -->
+<script src="capacitor.js"></script>
 <script src="config.js"></script>
 <script src="native.js"></script>
 <script>
@@ -1060,7 +1062,7 @@ function splash(){
     <g class="vanbob"><g transform="translate(222 52) scale(1.5)">${VAN.replace(/<\/?svg[^>]*>/g,'')}</g></g><g transform="translate(176 78) scale(1.25)">${POSTMAN.replace(/<\/?svg[^>]*>/g,'')}</g></svg>
    <button class="gb red" type="button" id="sp">${save.unlocked>1?'Continue · Level '+nextLevel():'Play'}</button>
    <p style="margin:0;color:#1F4D17;font-weight:900">Turn the roads. Deliver the mail.</p>
-   ${save.unlocked>1?`<div class="chips"><span class="chip">${STAR(true)}${st} stars</span><span class="chip"><span class="em">🔥</span>${sk}-day streak</span><span class="chip">${COIN}${save.points}</span></div>`:''}
+   ${save.unlocked>1?`<div class="chips"><span class="chip">${STAR(true)}${st} stars</span>${sk?`<span class="chip"><span class="em">🔥</span>${sk}-day streak</span>`:''}<span class="chip">${COIN}${save.points}</span></div>`:''}
    <div class="foot">Relaxing puzzles for every age · v${window.PP_CONFIG.version}</div>`;
   document.body.appendChild(el);const b=el.querySelector('#sp');b.focus();b.onclick=()=>{SFX.unlock();el.remove();askAge(()=>Native.startAds())};
 }
