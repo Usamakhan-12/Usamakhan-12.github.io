@@ -7,6 +7,7 @@
 <meta name="description" content="Pocket Postman: a relaxing road puzzle for every age. Turn the roads, deliver the mail. Play free in your browser.">
 <link rel="icon" href="pocket-postman/icon.png">
 <style>
+  @font-face{font-family:"Lilita One";src:url(pocket-postman/play/fonts/lilita-one-latin-400-normal.woff2) format("woff2");font-display:block}
   :root{--ink:#1F2B45;--muted:#5B6884;--bg:#BFE3FA;--card:#fff;--red:#E5483B;--redd:#B8342A}
   @media (prefers-color-scheme:dark){:root{--ink:#E8EEF6;--muted:#A7B3C6;--bg:#13203A;--card:#1B2944}}
   *{box-sizing:border-box}
@@ -14,7 +15,8 @@
   @media (prefers-color-scheme:dark){body{background:var(--bg)}}
   main{max-width:520px;width:100%;text-align:center;background:var(--card);border-radius:28px;padding:36px 24px;box-shadow:0 8px 0 rgba(0,0,0,.08),0 24px 48px rgba(10,20,50,.15)}
   img{width:112px;height:112px;border-radius:26px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
-  h1{font-size:36px;line-height:1.15;margin:18px 0 6px}
+  h1.logo{margin:0 auto 10px;line-height:0}
+  .lg{width:min(320px,100%);height:auto;overflow:visible;filter:drop-shadow(0 6px 10px rgba(20,40,80,.18))}
   p{margin:0 0 20px;color:var(--muted)}
   .play{display:inline-block;background:var(--red);color:#fff;text-decoration:none;font-weight:800;font-size:20px;padding:14px 34px;border-radius:18px;box-shadow:0 5px 0 var(--redd)}
   .play:active{transform:translateY(3px);box-shadow:0 2px 0 var(--redd)}
@@ -26,8 +28,40 @@
 </head>
 <body>
 <main>
-  <img src="pocket-postman/icon.png" alt="Pocket Postman icon">
-  <h1>Pocket Postman</h1>
+  <h1 class="logo"><svg class="lg" viewBox="0 0 340 192" role="img" aria-label="Pocket Postman">
+  <defs>
+    <mask id="lgPerf" maskUnits="userSpaceOnUse" x="-60" y="-50" width="120" height="100"><rect x="-46" y="-36" width="92" height="72" fill="#fff"/><g fill="#000"><circle cx="-41" cy="-36" r="3.4"/><circle cx="-41" cy="36" r="3.4"/><circle cx="-31.9" cy="-36" r="3.4"/><circle cx="-31.9" cy="36" r="3.4"/><circle cx="-22.799999999999997" cy="-36" r="3.4"/><circle cx="-22.799999999999997" cy="36" r="3.4"/><circle cx="-13.699999999999998" cy="-36" r="3.4"/><circle cx="-13.699999999999998" cy="36" r="3.4"/><circle cx="-4.599999999999998" cy="-36" r="3.4"/><circle cx="-4.599999999999998" cy="36" r="3.4"/><circle cx="4.500000000000002" cy="-36" r="3.4"/><circle cx="4.500000000000002" cy="36" r="3.4"/><circle cx="13.600000000000001" cy="-36" r="3.4"/><circle cx="13.600000000000001" cy="36" r="3.4"/><circle cx="22.700000000000003" cy="-36" r="3.4"/><circle cx="22.700000000000003" cy="36" r="3.4"/><circle cx="31.800000000000004" cy="-36" r="3.4"/><circle cx="31.800000000000004" cy="36" r="3.4"/><circle cx="40.900000000000006" cy="-36" r="3.4"/><circle cx="40.900000000000006" cy="36" r="3.4"/><circle cx="-46" cy="-27" r="3.4"/><circle cx="46" cy="-27" r="3.4"/><circle cx="-46" cy="-18" r="3.4"/><circle cx="46" cy="-18" r="3.4"/><circle cx="-46" cy="-9" r="3.4"/><circle cx="46" cy="-9" r="3.4"/><circle cx="-46" cy="0" r="3.4"/><circle cx="46" cy="0" r="3.4"/><circle cx="-46" cy="9" r="3.4"/><circle cx="46" cy="9" r="3.4"/><circle cx="-46" cy="18" r="3.4"/><circle cx="46" cy="18" r="3.4"/><circle cx="-46" cy="27" r="3.4"/><circle cx="46" cy="27" r="3.4"/></g></mask>
+    <linearGradient id="lgGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF2A8"/><stop offset=".45" stop-color="#FFD23F"/><stop offset="1" stop-color="#FFA41B"/></linearGradient>
+    <linearGradient id="lgRib" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#57A3F2"/><stop offset="1" stop-color="#2F7BD6"/></linearGradient>
+  </defs>
+  <g class="lg-stamp"><g transform="translate(170 46) rotate(-7)">
+    <rect x="-46" y="-36" width="92" height="72" fill="rgba(20,40,80,.22)" mask="url(#lgPerf)" transform="translate(3 5)"/>
+    <rect x="-46" y="-36" width="92" height="72" fill="#FFF8E7" mask="url(#lgPerf)"/>
+    <rect x="-38" y="-28" width="76" height="56" rx="4" fill="#E5483B"/>
+    <rect x="-34" y="-24" width="68" height="48" rx="3" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.5"/>
+    <g transform="translate(-15 0)" stroke="#B9800A" stroke-width="1.5" stroke-linejoin="round">
+      <path d="M0 -7C-8 -15 -22 -17 -29 -13C-21 -9 -11 -6 0 -2Z" fill="#FFC93C"/>
+      <path d="M0 -2C-9 -7 -22 -7 -27 -2C-19 1 -9 2 0 3Z" fill="#FFD866"/>
+      <path d="M0 3C-7 2 -17 4 -21 9C-14 10 -6 9 0 8Z" fill="#FFE38F"/>
+    </g>
+    <rect x="-16" y="-13" width="38" height="27" rx="3" fill="#fff" stroke="#1F2B45" stroke-width="2.2"/>
+    <path d="M-15 -11.5L3 2.5L21 -11.5" fill="none" stroke="#1F2B45" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="35" cy="-28" r="15" fill="none" stroke="#1F2B45" stroke-opacity=".35" stroke-width="2"/>
+    <path d="M24 -36q6 -4 12 0t12 0t12 0M24 -28q6 -4 12 0t12 0t12 0M24 -20q6 -4 12 0t12 0t12 0" fill="none" stroke="#1F2B45" stroke-opacity=".35" stroke-width="2" stroke-linecap="round"/>
+  </g></g>
+  <g class="lg-rib">
+    <path d="M84 96H52l10 13-10 13h32z" fill="#2864AE"/><path d="M256 96h32l-10 13 10 13h-32z" fill="#2864AE"/>
+    <path d="M84 122l-0 6 12-6z" fill="#173E70"/><path d="M256 122l0 6-12-6z" fill="#173E70"/>
+    <rect x="76" y="88" width="188" height="34" rx="5" fill="url(#lgRib)" stroke="#1D4C86" stroke-width="2.5"/>
+    <rect x="80" y="91" width="180" height="5" rx="2.5" fill="#fff" opacity=".25"/>
+    <text x="170" y="114" text-anchor="middle" font-family="Lilita One,Arial Rounded MT Bold,sans-serif" font-size="25" letter-spacing="7" fill="#fff">POCKET</text>
+  </g>
+  <g class="lg-word">
+    <text x="170" y="172" text-anchor="middle" font-family="Lilita One,Arial Rounded MT Bold,sans-serif" font-size="68" letter-spacing="1.5" transform="translate(0 7)" fill="#6E1B12" stroke="#6E1B12" stroke-width="13" stroke-linejoin="round">POSTMAN</text>
+    <text x="170" y="172" text-anchor="middle" font-family="Lilita One,Arial Rounded MT Bold,sans-serif" font-size="68" letter-spacing="1.5" fill="url(#lgGold)" stroke="#A3291C" stroke-width="10" stroke-linejoin="round" paint-order="stroke">POSTMAN</text>
+    <text x="170" y="172" text-anchor="middle" font-family="Lilita One,Arial Rounded MT Bold,sans-serif" font-size="68" letter-spacing="1.5" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.2" transform="translate(0 -1.5)">POSTMAN</text>
+  </g>
+</svg></h1>
   <p>A relaxing road puzzle for every age. Turn the roads, link every house and get the mail van home.</p>
   <a class="play" href="pocket-postman/play/">Play in your browser</a>
   <ul>
