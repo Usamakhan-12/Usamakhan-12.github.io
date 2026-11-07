@@ -631,19 +631,21 @@ const SFX=(()=>{
   const mGain=()=>musicOn?MUSIC_VOL*musicVol:0,sGain=()=>sfxOn?SFX_VOL*sfxVol:0;
   const N=n=>{const m=n.match(/^([A-G])(#?)(\d)$/);const i={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]]+(m[2]?1:0);return 440*Math.pow(2,(i+12*(+m[3]+1)-69)/12)};
 
-  function impulse(secs,decay){const r=ctx.sampleRate,len=Math.floor(r*secs),b=ctx.createBuffer(2,len,r);
-    for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay)}return b}
+  // Short mono reverb: convolution cost grows with length and channels, so this stays light on slower phones.
+  function impulse(secs,decay){const r=ctx.sampleRate,len=Math.floor(r*secs),b=ctx.createBuffer(1,len,r);
+    const d=b.getChannelData(0);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);return b}
   function init(){
     if(ctx){if(ctx.state==='suspended'&&!document.hidden&&!ducked)ctx.resume();return true}
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;
-    ctx=new AC();
+    // 'playback' asks for a larger audio buffer: a little more delay, but no crackles or dropouts on budget phones
+    try{ctx=new AC({latencyHint:'playback'})}catch(e){ctx=new AC()}
     const comp=ctx.createDynamicsCompressor();comp.threshold.value=-16;comp.knee.value=12;comp.ratio.value=3.5;comp.attack.value=.004;comp.release.value=.2;comp.connect(ctx.destination);
     master=ctx.createGain();master.gain.value=.9;master.connect(comp);
     sfxBus=ctx.createGain();sfxBus.gain.value=sGain();sfxBus.connect(master);
     // music runs through a low-pass "tone" filter: muffled and cosy on menus, open and bright in a level
     musicTone=ctx.createBiquadFilter();musicTone.type='lowpass';musicTone.frequency.value=mood==='play'?16000:2600;musicTone.Q.value=.4;
     musicBus=ctx.createGain();musicBus.gain.value=mGain();musicTone.connect(musicBus);musicBus.connect(master);
-    const ir=impulse(2.4,3.2);
+    const ir=impulse(1.3,2.6);
     mRev=ctx.createConvolver();mRev.buffer=ir;const mw=ctx.createGain();mw.gain.value=.55;mRev.connect(mw);mw.connect(musicTone);
     sRev=ctx.createConvolver();sRev.buffer=ir;const sw=ctx.createGain();sw.gain.value=.5;sRev.connect(sw);sw.connect(sfxBus);
     delay=ctx.createDelay(1);delay.delayTime.value=60/BPM*.75;const fb=ctx.createGain();fb.gain.value=.15;const dw=ctx.createGain();dw.gain.value=.22;
@@ -684,7 +686,6 @@ const SFX=(()=>{
   // Whistled melody: pure tone that scoops up into the note, with delayed vibrato and a breath of air.
   function whistle(f,t,d,v,pan=.12){
     tone({f:f*.97,f2:f,type:'sine',t,d,v,a:.03,bus:'m',rev:.35,echo:.15,pan,vib:f*.012,vibDelay:Math.min(.25,d*.4)});
-    tone({f:f*2,type:'sine',t,d:d*.6,v:v*.06,a:.03,bus:'m',pan});
     noise({t,d:Math.min(.12,d),v:v*.18,freq:f*2.2,q:3,type:'bandpass',bus:'m',pan});
   }
   function bass(f,t,d,v){
@@ -698,7 +699,7 @@ const SFX=(()=>{
   function hat(t,v,open=false,pan=.3){noise({t,d:open?.16:.035,v,freq:8500,q:.7,bus:'m',pan})}
   function pad(notes,t,d,v){
     if(!ctx)return;const now=ctx.currentTime+t;
-    notes.forEach((f,i)=>{[-8,8].forEach(dt=>{const o=ctx.createOscillator(),fl=ctx.createBiquadFilter(),g=ctx.createGain();
+    notes.forEach((f,i)=>{[i%2?-7:7].forEach(dt=>{const o=ctx.createOscillator(),fl=ctx.createBiquadFilter(),g=ctx.createGain();
       o.type='sawtooth';o.frequency.value=f;o.detune.value=dt;fl.type='lowpass';fl.frequency.value=900;fl.Q.value=.5;
       g.gain.setValueAtTime(.0001,now);g.gain.linearRampToValueAtTime(v,now+d*.35);g.gain.linearRampToValueAtTime(.0001,now+d);
       o.connect(fl);fl.connect(g);out(g,{bus:'m',rev:.5,pan:(i%2?.25:-.25)});o.start(now);o.stop(now+d+.05)})});
@@ -753,10 +754,13 @@ const SFX=(()=>{
     if(b.sec==='A'&&b.mel){const n=b.mel[s];if(n!=='-'&&n!=='.'){let len=1;while(s+len<8&&b.mel[s+len]==='-')len++;
       whistle(N(n),t,len*EIGHTH*.95+.08,play?.06:.045)}}
   }
+  // Notes are queued ~0.6 s ahead, so a busy moment on the phone never leaves a gap in the music.
+  // After a pause (app in background, an ad) missed notes are skipped instead of all playing at once.
   function schedule(){
-    while(nextT<ctx.currentTime+.15){const t=nextT-ctx.currentTime+(step%2?SWING:0);playStep(Math.max(0,t));nextT+=EIGHTH;step++}
+    if(nextT<ctx.currentTime-.05)nextT=ctx.currentTime+.05;
+    while(nextT<ctx.currentTime+.6){const t=nextT-ctx.currentTime+(step%2?SWING:0);playStep(Math.max(0,t));nextT+=EIGHTH;step++}
   }
-  function startMusic(){if(!ctx||timer)return;nextT=ctx.currentTime+.1;timer=setInterval(schedule,25)}
+  function startMusic(){if(!ctx||timer)return;nextT=ctx.currentTime+.15;timer=setInterval(schedule,120);schedule()}
 
   document.addEventListener('visibilitychange',()=>{if(!ctx)return;document.hidden?ctx.suspend():(!ducked&&ctx.resume())});
   document.addEventListener('pointerdown',()=>{if(ctx&&ctx.state==='suspended'&&!ducked)ctx.resume()},true);
@@ -795,6 +799,7 @@ const SFX=(()=>{
     duck(on,secs){if(!ctx)return;const now=ctx.currentTime;musicBus.gain.cancelScheduledValues(now);
       if(secs){musicBus.gain.setTargetAtTime(mGain()*.2,now,.05);musicBus.gain.setTargetAtTime(mGain(),now+secs,.5);return}
       ducked=on;if(on)ctx.suspend();else{musicBus.gain.setValueAtTime(mGain(),now);if(!document.hidden)ctx.resume()}},
+    get ctx(){return ctx},   // for diagnostics only
     get music(){return musicOn},get sfx(){return sfxOn},get musicVol(){return musicVol},get sfxVol(){return sfxVol},
     setMusic(on){musicOn=on;put('pp-music',on);if(ctx)musicBus.gain.setTargetAtTime(mGain(),ctx.currentTime,.1)},
     setSfx(on){sfxOn=on;put('pp-sfx',on);if(ctx)sfxBus.gain.setTargetAtTime(sGain(),ctx.currentTime,.02)},
